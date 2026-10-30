@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>needle</title><meta name="description" content="A daily music game: name songs from the 2006–2010 year-end Hot 100. The deeper the cut, the more it scores.">
+<meta property="og:title" content="needle"><meta property="og:description" content="How deep does your taste go? A daily music game.">
+<meta name="theme-color" content="#FBFAF7">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%230E0D0B'/%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%23F5521A' stroke-width='10'/%3E%3Ccircle cx='50' cy='50' r='16' fill='%23FBFAF7'/%3E%3C/svg%3E">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head><body>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&family=Schibsted+Grotesk:wght@400;500;600&family=Space+Mono&display=swap">
+<style>
+/* Layout: one calm column on phones; on desktop the record sits on the right like an object on a table. */
+:root{
+  --paper:#FBFAF7; --wash:#F3F0EA; --hair:#E7E3DC; --mute:#6F6A62; --ink:#141310; --on-ink:#FFFFFF;
+  --sig:#F5521A; --deep:#C23A0A; --tint:#FFEDE5; --vinyl:#0E0D0B; --label:#FBFAF7; --scrim:rgba(20,19,16,.45);
+  --t10:#FFC2A8; --t30:#FF9D74; --t60:#FF7A45; --t85:#F5521A;
+  --ff-ui:"Schibsted Grotesk",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ff-voice:"Instrument Serif",ui-serif,Georgia,serif;
+  --ff-mono:"Space Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r-ctl:999px; --r-row:14px; --r-card:22px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#121110; --wash:#1C1A17; --hair:#2C2925; --mute:#A39D94; --ink:#F2EFE9; --on-ink:#121110;
+  --sig:#FF6A33; --deep:#FF8A5C; --tint:#2A1A12; --vinyl:#050504; --label:#E9E4DC; --scrim:rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#121110; --wash:#1C1A17; --hair:#2C2925; --mute:#A39D94; --ink:#F2EFE9; --on-ink:#121110;
+  --sig:#FF6A33; --deep:#FF8A5C; --tint:#2A1A12; --vinyl:#050504; --label:#E9E4DC; --scrim:rgba(0,0,0,.6); color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font:15px/1.45 var(--ff-ui);-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--sig);outline-offset:2px}
+.mono,.lab{font-family:var(--ff-mono)}
+.lab{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.lab.deep{color:var(--deep)}
+.voice{font-family:var(--ff-voice);font-style:italic;font-weight:400}
+.num{font-variant-numeric:tabular-nums}
+#app{max-width:1120px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding-block:12px 96px}
+.view{display:flex;flex-direction:column;gap:20px;flex:1}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:40px}
+.wordmark{font-weight:600;font-size:24px;letter-spacing:-.04em}
+.pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--hair);border-radius:var(--r-ctl);padding:6px 12px;font-size:12px;font-weight:500;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--sig)}
+h1{font-weight:500;font-size:clamp(34px,8vw,56px);line-height:1.04;letter-spacing:-.03em;margin:0;text-wrap:balance}
+h2{font-weight:500;font-size:clamp(26px,6vw,40px);line-height:1.12;letter-spacing:-.02em;margin:0;text-wrap:balance}
+h3{font-weight:500;font-size:17px;margin:0}
+.btn{display:flex;align-items:center;justify-content:space-between;gap:16px;background:var(--ink);color:var(--on-ink);border-radius:var(--r-ctl);padding:17px 24px;font-size:17px;font-weight:500;width:100%}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--hair);justify-content:center}
+.btn.sig{background:var(--sig);color:#141310}
+.btn[disabled]{opacity:.4;cursor:default}
+.btn svg{flex:none}
+.row2{display:flex;gap:10px}.row2>*{flex:1}
+.sub{color:var(--mute);font-size:14px}
+.split{display:grid;gap:24px}
+@media (min-width:900px){
+  .split{grid-template-columns:minmax(0,1fr) minmax(0,440px);align-items:center;gap:72px}
+  #app{padding-block:28px 40px}
+}
+.center{display:flex;justify-content:center}
+/* record */
+.rec{position:relative;width:100%;max-width:var(--rs,260px);aspect-ratio:1/1;margin:0 auto}
+.rec svg{width:100%;height:100%;overflow:visible;display:block}
+.rec .band{transition:stroke-width .6s ease-in-out}
+.rec.shadow .disc{filter:drop-shadow(0 18px 24px rgba(20,19,16,.22))}
+@media (prefers-reduced-motion:reduce){.rec .band{transition:none}}
+/* home */
+.yesterday{display:flex;align-items:center;gap:12px;border-top:1px solid var(--hair);padding-top:14px;text-align:left;width:100%}
+.yesterday .grow{flex:1;min-width:0}
+/* tabbar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--hair);display:flex;justify-content:space-around;
+  padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));z-index:5}
+.tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--mute);min-width:64px;padding:4px}
+.tabbar button[aria-current="page"]{color:var(--ink);font-weight:500}
+@media (min-width:900px){.tabbar{position:static;border:0;justify-content:flex-start;gap:8px;padding:0;background:none}
+  .tabbar button{flex-direction:row;font-size:14px;gap:8px;min-width:0;padding:8px 12px;border-radius:999px}
+  .tabbar button[aria-current="page"]{background:var(--wash)}
+  #app{padding-block:20px 40px}}
+.deskbar{display:none}
+@media (min-width:900px){.deskbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}.mobilebar{display:none!important}}
+/* play */
+.playhead{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:12px}
+.steps{display:flex;gap:5px;justify-content:center;align-items:center}
+.steps i{display:block;height:2.5px;width:12px;border-radius:2px;background:var(--hair)}
+.steps i.done{background:var(--ink)}.steps i.now{width:24px;background:var(--sig)}
+.score-mini{display:flex;align-items:center;gap:6px;font-family:var(--ff-mono);font-size:14px}
+.timer{display:flex;align-items:center;gap:10px}
+.timer .bar{flex:1;height:3px;background:var(--hair);border-radius:2px;overflow:hidden}
+.timer .bar span{display:block;height:100%;background:var(--ink);transform-origin:left;transition:transform .25s linear}
+.timer.low .bar span{background:var(--sig)}
+.timer .t{font-family:var(--ff-mono);font-size:13px;min-width:34px;text-align:right}
+.q{display:flex;flex-direction:column;gap:6px}
+.q h2{font-size:clamp(26px,6.5vw,36px)}
+.inputrow{display:flex;gap:8px;align-items:center}
+.inputrow input{flex:1;min-width:0;background:var(--wash);border:0;border-radius:999px;padding:15px 20px;font:inherit;font-size:17px;color:var(--ink)}
+.inputrow input::placeholder{color:var(--mute)}
+.go{width:52px;height:52px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;flex:none}
+.go.ready{background:var(--sig);color:#141310}
+.sugg{background:var(--paper);border:1px solid var(--hair);border-radius:16px;box-shadow:0 1px 2px rgba(20,19,16,.06),0 8px 24px rgba(20,19,16,.08);padding:4px;display:flex;flex-direction:column;max-height:300px;overflow:auto}
+.sugg button{display:flex;align-items:center;gap:12px;padding:8px;border-radius:12px;text-align:left}
+.sugg button.on,.sugg button:hover{background:var(--wash)}
+.sugg .meta{flex:1;min-width:0}
+.t1{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t2{font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kbd{font-family:var(--ff-mono);font-size:10px;color:var(--mute);border:1px solid var(--hair);border-radius:6px;padding:2px 6px}
+.hint{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hint button{display:flex;align-items:center;gap:8px;font-weight:500;font-size:14px}
+.hint button[disabled]{opacity:.45}
+.wave{display:inline-flex;gap:1.6px;align-items:center;height:12px}
+.wave i{display:block;width:2px;border-radius:1px;background:var(--sig)}
+.playing .wave i{animation:w .9s ease-in-out infinite alternate}
+.wave i:nth-child(2){animation-delay:.15s}.wave i:nth-child(3){animation-delay:.3s}.wave i:nth-child(4){animation-delay:.45s}
+@keyframes w{to{transform:scaleY(.35)}}
+@media (prefers-reduced-motion:reduce){.playing .wave i{animation:none}}
+/* cover */
+.cv{flex:none;border-radius:8px;background-color:var(--wash);background-repeat:no-repeat;position:relative;overflow:hidden}
+.cv.spin{border-radius:50%;animation:spin 6s linear infinite}
+.cv.spin::after{content:"";position:absolute;inset:38%;border-radius:50%;background:var(--paper);box-shadow:0 0 0 2px var(--sig)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.cv.spin{animation:none;box-shadow:0 0 0 3px var(--sig)}}
+/* reveal */
+.verdict{display:flex;align-items:center;gap:20px}
+.verdict .rec{--rs:150px;margin:0;flex:none;width:42%}
+.big{font-size:clamp(52px,14vw,80px);line-height:.95;letter-spacing:-.04em;font-weight:400}
+.youcard{display:flex;gap:14px;align-items:center;border:1px solid var(--hair);border-radius:20px;padding:12px}
+.youcard .grow,.lrow .grow{flex:1;min-width:0}
+.playbtn{width:40px;height:40px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;flex:none}
+.playbtn.o{background:none;color:var(--ink);border:1px solid var(--hair);width:34px;height:34px}
+.iconbtn{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;flex:none}
+.iconbtn.on{color:var(--sig)}
+.list{display:flex;flex-direction:column}
+.lrow{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--hair)}
+.tier{width:3px;align-self:stretch;border-radius:2px;flex:none}
+.sticky{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:3}
+/* results */
+.card{border:1px solid var(--hair);border-radius:var(--r-card);padding:18px}
+.hist{display:flex;align-items:flex-end;gap:3px;height:64px}
+.hist i{flex:1;background:var(--hair);border-radius:3px 3px 0 0;min-height:3px}
+.hist i.me{background:var(--sig)}
+.teaser{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--wash);border-radius:18px;padding:14px 16px}
+/* records */
+.stats{display:grid;grid-template-columns:repeat(4,1fr)}
+.stats div{padding:0 10px;border-left:1px solid var(--hair)}.stats div:first-child{padding-left:0;border:0}
+.stats b{display:block;font-weight:400;font-size:22px;letter-spacing:-.03em}
+.stats span{font-size:11px;color:var(--mute)}
+.seg{display:flex;border-bottom:1px solid var(--hair)}
+.seg button{flex:1;padding:10px 0;color:var(--mute);border-bottom:2px solid transparent;margin-bottom:-1px}
+.seg button[aria-selected="true"]{color:var(--ink);font-weight:500;border-color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 12px}
+@media (min-width:700px){.grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.gitem{display:flex;flex-direction:column;gap:4px;text-align:left}
+.gitem .rec{max-width:none}
+.empty-disc{aspect-ratio:1/1;border-radius:50%;border:1.5px dashed var(--hair);display:grid;place-items:center;font-weight:500}
+/* sheet */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--paper);width:100%;max-width:520px;border-radius:28px 28px 0 0;padding:12px max(22px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(22px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:18px;max-height:92%;overflow:auto}
+@media (min-width:900px){.scrim{align-items:center}.sheet{border-radius:28px}}
+.grab{width:36px;height:5px;border-radius:3px;background:var(--hair);margin:0 auto}
+.step{display:flex;gap:16px;align-items:center}
+.step .vis{width:84px;height:84px;border-radius:18px;background:var(--wash);display:grid;place-items:center;flex:none;font-family:var(--ff-mono);font-size:12px}
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--on-ink);padding:10px 16px;border-radius:999px;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
+.loading{display:grid;place-items:center;flex:1;color:var(--mute);gap:12px;text-align:center}
+.notice{font-size:13px;color:var(--mute);background:var(--wash);border-radius:14px;padding:12px 14px}
+[hidden]{display:none!important}
+.err{margin:0;color:var(--deep);font-size:14px;animation:shake .32s}
+@keyframes shake{20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+@media (prefers-reduced-motion:reduce){.err{animation:none}}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+
+<div id="app"><div class="loading"><div class="wordmark">needle</div><div class="lab">Loading the charts</div></div></div>
+<audio id="audio" preload="none"></audio>
+
+<script>
+(() => {
+"use strict";
+/* ---------- constants ---------- */
+const EPOCH = new Date(2026, 5, 11); // day No. 1 = 11 June 2026, so 30 Oct 2026 is No. 142
+const PROMPT_SECONDS = 25, HINT_SECONDS = 3;
+const TIERS = [[10,10,"Smash hit","t10"],[40,30,"Hit","t30"],[70,60,"Charted","t60"],[90,85,"Deep cut","t85"],[100,100,"Forgotten","t85"]];
+const tierFor = r => TIERS.find(t => r <= t[0]);
+const pointsFor = r => tierFor(r)[1];
+const tierVar = p => p >= 85 ? "--t85" : p >= 60 ? "--t60" : p >= 30 ? "--t30" : "--t10";
+const REACT = { 0:["Not on that list.","That one didn’t chart there."], 10:["Everyone said that.","The safe pick."], 30:["Solid.","A real hit."], 60:["Getting deeper.","Nice dig."], 85:["Ooh. That’s deep.","Now we’re digging."], 100:["Forgotten gem.","Straight to the label."] };
+const SHARE_GLYPH = p => p===0?"×":p>=100?"●":p>=85?"◕":p>=60?"◑":p>=30?"◔":"○";
+
+/* ---------- storage (per device) ---------- */
+const store = {
+  get(k, d){ try { const v = localStorage.getItem("needle:"+k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v){ try { localStorage.setItem("needle:"+k, JSON.stringify(v)); } catch {} }
+};
+
+/* ---------- helpers ---------- */
+const $ = (s, el=document) => el.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm = s => s.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/&/g," and ").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+function rng(seed){ let s = seed >>> 0; return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function shuffle(a, r){ a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const dayNumber = (d = new Date()) => Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - EPOCH) / 86400000) + 1;
+const dateOf = n => new Date(EPOCH.getFullYear(), EPOCH.getMonth(), EPOCH.getDate() + n - 1);
+const fmtDate = d => d.toLocaleDateString(undefined, { weekday:"long", day:"numeric", month:"short" });
+const fmtShort = d => d.toLocaleDateString(undefined, { weekday:"short", day:"numeric", month:"short" });
+const I = {
+  arrow:'<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h12M10 4l5 5-5 5"/></svg>',
+  close:'<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 3l12 12M15 3L3 15"/></svg>',
+  back:'<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 9H3M8 4L3 9l5 5"/></svg>',
+  chev:'<svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l6 6-6 6"/></svg>',
+  play:'<svg width="14" height="14" viewBox="0 0 14 14"><path d="M4 2.6v8.8c0 .5.5.8.9.5l7-4.4a.6.6 0 000-1L4.9 2.1c-.4-.3-.9 0-.9.5z" fill="currentColor"/></svg>',
+  pause:'<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="3" y="2" width="3" height="10" rx="1"/><rect x="8" y="2" width="3" height="10" rx="1"/></svg>',
+  plus:'<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 3v12M3 9h12"/></svg>',
+  check:'<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9.5l3.5 3.5 7.5-8"/></svg>',
+  share:'<svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V2M5 6l4-4 4 4M3 10v6h12v-6"/></svg>',
+  today:'<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7.5"/><circle cx="10" cy="10" r="2.5"/></svg>',
+  records:'<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="1.5"/><path d="M7 4v13"/></svg>',
+  saved:'<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M10 16.5C3 12 2 8 4.2 5.5 6 3.6 8.6 4 10 6.2 11.4 4 14 3.6 15.8 5.5 18 8 17 12 10 16.5z"/></svg>',
+  help:'<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.5"/><path d="M8 8a2 2 0 113 1.7c-.7.4-1 .9-1 1.6M10 14h0"/></svg>'
+};
+const wave = () => '<span class="wave" aria-hidden="true"><i style="height:5px"></i><i style="height:10px"></i><i style="height:7px"></i><i style="height:12px"></i><i style="height:5px"></i></span>';
+
+/* ---------- record SVG ---------- */
+function recordSVG(pts, { arm = false, armRest = false, label = "", size = 260, ghost = false } = {}) {
+  const c = 50, Ro = 48.2, Ri = 18.5, span = Ro - Ri;
+  let grooves = ""; for (let r = Ro; r > Ri + 0.5; r -= 1.3) grooves += `<circle cx="50" cy="50" r="${r.toFixed(2)}" fill="none" stroke="#fff" stroke-opacity=".07" stroke-width=".25"/>`;
+  let bands = "", r = Ro;
+  pts.forEach((p, i) => { const w = p / 700 * span; if (w <= 0) return; const mid = r - w / 2;
+    bands += `<circle class="band" data-i="${i}" cx="50" cy="50" r="${mid.toFixed(3)}" fill="none" stroke="var(${tierVar(p)})" stroke-width="${w.toFixed(3)}"/>`; r -= w; });
+  const edge = r;
+  let armSvg = "";
+  if (arm) { const piv = [57.5 + 48, 5]; const th = Math.PI * 0.06; const tip = armRest ? [104, 70] : [c + edge * Math.cos(th), c + edge * Math.sin(th)];
+    const dx = tip[0] - piv[0], dy = tip[1] - piv[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, hs = [tip[0] - ux * 9, tip[1] - uy * 9];
+    armSvg = `<g class="arm"><line x1="${piv[0]}" y1="${piv[1]}" x2="${hs[0]}" y2="${hs[1]}" stroke="#C9C2B8" stroke-width="1.5" stroke-linecap="round"/><line x1="${hs[0]}" y1="${hs[1]}" x2="${tip[0] - ux * 1.2}" y2="${tip[1] - uy * 1.2}" stroke="#E9E4DC" stroke-width="3.4" stroke-linecap="round"/><circle cx="${piv[0]}" cy="${piv[1]}" r="4.5" fill="var(--paper)" stroke="#C9C2B8" stroke-width="1"/><circle cx="${tip[0]}" cy="${tip[1]}" r="1.4" fill="var(--sig)"/></g>`; }
+  const w = arm ? 112 : 100;
+  return `<svg viewBox="0 0 ${w} 100" role="img" aria-label="Record, ${pts.reduce((a,b)=>a+b,0)} of 700 points"><g class="disc"><circle cx="50" cy="50" r="49.5" fill="${ghost ? "none" : "var(--vinyl)"}" ${ghost ? 'stroke="var(--hair)" stroke-dasharray="2 2"' : ""}/></g>${ghost ? "" : grooves + bands +
+    `<path d="M50 50 m-48 0 a48 48 0 0 1 20-39" fill="none" stroke="#fff" stroke-opacity=".035" stroke-width="18"/>` +
+    `<circle cx="50" cy="50" r="17" fill="var(--label)"/>` + (label ? `<text x="50" y="51.5" text-anchor="middle" font-family="Space Mono, monospace" font-size="4.2" letter-spacing=".3" fill="#141310">${esc(label)}</text>` : `<circle cx="50" cy="50" r="1.4" fill="#141310"/>`)}${armSvg}</svg>`;
+}
+const recordEl = (pts, opts = {}) => `<div class="rec ${opts.shadow ? "shadow" : ""}" style="--rs:${opts.size || 260}px${opts.arm ? ";aspect-ratio:112/100" : ""}">${recordSVG(pts, opts)}</div>`;
+
+/* ---------- data ---------- */
+let DATA = null, TAGMAP = {}, CATALOG = [], BYKEY = new Map(), YEARS = [], THEMES = [];
+const coverStyle = (song, px) => {
+  const s = song.slot; if (!s) return `width:${px}px;height:${px}px`;
+  const n = DATA.grid;
+  return `width:${px}px;height:${px}px;background-image:url(covers/${s.y}.jpg);background-size:${n * 100}% ${n * 100}%;background-position:${(s.i % n) / (n - 1) * 100}% ${Math.floor(s.i / n) / (n - 1) * 100}%`;
+};
+const coverEl = (song, px, r = 8) => `<span class="cv" style="${coverStyle(song, px)};border-radius:${r}px" aria-hidden="true"></span>`;
+
+function splitArtists(a) {
+  const main = a.split(/\s+(?:featuring|feat\.?|ft\.?|with)\s+/i)[0];
+  const featured = /\s(featuring|feat\.?|ft\.?)\s/i.test(a);
+  const people = a.split(/\s+(?:featuring|feat\.?|ft\.?|with|and|&|x|vs\.?)\s+|,\s*/i).map(s => s.trim()).filter(Boolean);
+  return { main: main.trim(), featured, people };
+}
+function buildCatalog(json) {
+  DATA = json; YEARS = Object.keys(json.years).map(Number).sort();
+  for (const y of YEARS) json.years[y].forEach((e, i) => {
+    const key = norm(e.t) + "|" + norm(splitArtists(e.a).main);
+    let s = BYKEY.get(key);
+    if (!s) { s = { key, t: e.t, a: e.a, ranks: {}, slot: null, clip: null, tags: new Set(), ...splitArtists(e.a), nt: norm(e.t), na: norm(e.a) }; BYKEY.set(key, s); CATALOG.push(s); }
+    for (const c of (TAGMAP[y + "-" + e.r] || "")) s.tags.add(c); if (s.featured) s.tags.add("F");
+    s.ranks[y] = e.r;
+    if (!s.slot && e.c) s.slot = { y, i: e.i ?? i };
+    if (!s.clip && e.p) s.clip = { y, i: e.i ?? i };
+  });
+  THEMES = buildThemes();
+}
+const inYear = (s, y) => s.ranks[y] != null;
+const words = t => norm(t).split(" ").filter(Boolean);
+
+const TAGS = {
+  L: { any: "Name a love song.", yr: y => `Name a love song from ${y}.`, label: "Love song" },
+  B: { any: "Name a breakup song.", yr: y => `Name a breakup song from ${y}.`, label: "Breakup song" },
+  P: { any: "Name a party song.", yr: y => `Name a party song from ${y}.`, label: "Party song" },
+  R: { any: "Name a rap song.", yr: y => `Name a rap song from ${y}.`, label: "Rap song" },
+  C: { any: "Name a country song.", yr: y => `Name a country song from ${y}.`, label: "Country song" },
+  K: { any: "Name a rock song.", yr: y => `Name a rock song from ${y}.`, label: "Rock song" },
+  W: { any: "Name a hit by a female artist.", yr: y => `Name a ${y} hit by a female artist.`, label: "Female artist" },
+  G: { any: "Name a hit by a band or group.", yr: y => `Name a ${y} hit by a band or group.`, label: "Band or group" },
+  D: { any: "Name a song with its own dance.", yr: y => `Name a ${y} song with its own dance.`, label: "Has a dance" },
+  I: { any: "Name a hit by an American Idol contestant.", yr: y => `Name a ${y} hit by an American Idol contestant.`, label: "Idol alum" },
+  S: { any: "Name a sad song.", yr: y => `Name a sad song from ${y}.`, label: "Sad song" },
+  M: { any: "Name a song about money.", yr: y => `Name a ${y} song about money.`, label: "Money song" },
+  F: { any: "Name a song with a featured artist.", yr: y => `Name a ${y} hit with a featured artist.`, label: "Featuring" }
+};
+const COMBO = {
+  "LC": ["Name a country love song.", "Country love song"], "BW": ["Name a breakup song by a female artist.", "Her breakup song"],
+  "LG": ["Name a love song by a band.", "Band love song"], "LR": ["Name a rap love song.", "Rap love song"],
+  "PW": ["Name a party song by a female artist.", "Her party song"], "PF": ["Name a party song with a featured artist.", "Party feature"],
+  "PG": ["Name a party song by a group.", "Group party song"], "LK": ["Name a rock love song.", "Rock love song"],
+  "BK": ["Name a rock breakup song.", "Rock breakup"], "BR": ["Name a rap breakup song.", "Rap breakup"]
+};
+const hasTags = (s, t) => [...t].every(c => s.tags.has(c));
+function buildThemes() {
+  const span = `${YEARS[0]}–${YEARS[YEARS.length - 1]}`, all = YEARS;
+  const T = {};
+  for (const y of YEARS) {
+    const P = [{ text: `Name a hit from ${y}.`, label: `Any ${y} hit`, years: [y], ok: s => inYear(s, y) }];
+    for (const t of "LBPRWGFKCSDIM") P.push({ text: TAGS[t].yr(y), label: TAGS[t].label, years: [y], ok: s => inYear(s, y) && hasTags(s, t) });
+    T["y" + y] = { id: "y" + y, name: `The ${y} chart`, scope: `Answers from the ${y} year-end Hot 100`, blurb: `Seven prompts. Every answer has to be a hit from ${y}.`, fixedFirst: true, pool: P };
+  }
+  const tagP = t => t.length === 1 ? { text: TAGS[t].any, label: TAGS[t].label, years: all, ok: s => hasTags(s, t) } : { text: COMBO[t][0], label: COMBO[t][1], years: all, ok: s => hasTags(s, t) };
+  T.love = { id: "love", name: "Love & heartbreak", scope: `Answers from the ${span} year-end charts`, blurb: `Crushes, breakups and everything between, ${span}.`, pool: ["L", "B", "S", "LC", "BW", "LG", "LR", "LK", "BK", "BR"].map(tagP) };
+  T.party = { id: "party", name: "Party night", scope: `Answers from the ${span} year-end charts`, blurb: `Club hits, dance crazes and money songs, ${span}.`, pool: ["P", "D", "R", "PW", "M", "PF", "PG"].map(tagP) };
+  T.bands = { id: "bands", name: "Bands, ballads & Idols", scope: `Answers from the ${span} year-end charts`, blurb: `Guitars, slow songs and talent-show stars, ${span}.`, pool: ["K", "G", "S", "I", "C", "LK", "BK", "LG"].map(tagP) };
+  T.mix = { id: "mix", name: "Late-2000s mixtape", scope: `Answers from the ${span} year-end charts`, blurb: `A bit of everything from ${span}.`, pool: ["L", "B", "P", "R", "C", "K", "W", "G", "D", "I", "S", "M", "F"].map(tagP) };
+  const art = {}; CATALOG.forEach(s => s.people.forEach(p => { const k = norm(p); art[k] = art[k] || { name: p, n: 0 }; art[k].n++; }));
+  T.names = { id: "names", name: "Big names", scope: `Answers from the ${span} year-end charts`, blurb: `The era’s biggest stars. Skip their obvious hit.`,
+    pool: Object.values(art).filter(a => a.n >= 4).sort((a, b) => b.n - a.n).map(a => ({ text: `Name a ${a.name} song.`, label: a.name, years: all, ok: s => s.people.some(p => norm(p) === norm(a.name)) })) };
+  const feat = {}; CATALOG.forEach(s => { if (!s.featured) return; s.people.slice(1).forEach(p => { const k = norm(p); feat[k] = feat[k] || { name: p, n: 0 }; feat[k].n++; }); });
+  T.feat = { id: "feat", name: "The featuring era", scope: `Answers from the ${span} year-end charts`, blurb: `When every hit had a guest verse.`,
+    pool: Object.values(feat).filter(f => f.n >= 3).sort((a, b) => b.n - a.n).map(f => ({ text: `Name a song featuring ${f.name}.`, label: `Feat. ${f.name}`, years: all, ok: s => s.featured && s.people.slice(1).some(p => norm(p) === norm(f.name)) })) };
+  const order = ["y2006", "love", "y2007", "party", "y2008", "names", "y2009", "bands", "y2010", "feat", "mix"];
+  return order.map(k => T[k]).filter(t => t && t.pool.filter(p => CATALOG.filter(p.ok).length >= 4).length >= 7);
+}
+function themeForDay(n) {
+  const i08 = Math.max(0, THEMES.findIndex(t => t.id === "y2008"));
+  return THEMES[((n - 142 + i08) % THEMES.length + THEMES.length) % THEMES.length];
+}
+function promptsFor(n) {
+  const theme = themeForDay(n), r = rng(n * 7919 + 13);
+  const pool = theme.pool.filter(p => CATALOG.filter(p.ok).length >= 4);
+  const list = theme.fixedFirst ? [pool[0], ...shuffle(pool.slice(1), r)] : shuffle(pool, r);
+  return { theme, prompts: list.slice(0, 7).map(p => ({ ...p, answers: CATALOG.filter(p.ok) })) };
+}
+const scoreFor = (song, prompt) => Math.max(...prompt.years.filter(y => song.ranks[y] != null).map(y => pointsFor(song.ranks[y])), 0);
+const bestRank = (song, prompt) => Math.min(...prompt.years.filter(y => song.ranks[y] != null).map(y => song.ranks[y]));
+const rankLine = (song, prompt) => { const ys = prompt.years.filter(y => song.ranks[y] != null); const y = ys.sort((a, b) => song.ranks[b] - song.ranks[a])[0]; return y ? `#${song.ranks[y]} of ${y}` : "Not on this chart"; };
+
+/* ---------- shared stats (db, optional) ---------- */
+let db = null, me = null, PLAYS = [];
+async function connectDb() {
+  try {
+    if (!window.claude?.use) return;
+    db = await window.claude.use("db"); const user = await window.claude.use("user");
+    if (!db || !user) { db = null; return; }
+    me = await user.id();
+    db.collection("plays").onSnapshot(snap => { PLAYS = snap.docs.map(d => d.data()); if (state.view === "results" || state.view === "reveal") render(); }, () => { db = null; });
+  } catch { db = null; }
+}
+async function pushPlay(n, rec) {
+  if (!db || !me) return;
+  const ref = db.collection("plays").doc(me);
+  const body = { last: n, days: { [n]: { a: rec.answers.map(a => a ? a.key : null), s: rec.answers.map(a => a ? a.pts : 0), score: rec.score, done: !!rec.done } } };
+  try { const snap = await ref.get(); if (snap.exists) await ref.update(body); else await ref.set(body); } catch {}
+}
+function dayStats(n) {
+  const rows = PLAYS.map(p => p.days && p.days[n]).filter(Boolean);
+  const counts = Array.from({ length: 7 }, () => new Map());
+  rows.forEach(r => (r.a || []).forEach((k, i) => { if (k) counts[i].set(k, (counts[i].get(k) || 0) + 1); }));
+  const scores = rows.filter(r => r.done).map(r => r.score || 0);
+  return { players: rows.length, finished: scores.length, counts, scores };
+}
+
+/* ---------- state ---------- */
+const today = dayNumber();
+const state = { view: "home", day: today, idx: 0, run: null, sheet: false, tab: "records", sugg: [], sel: 0, typed: "", timeLeft: PROMPT_SECONDS, hintUsed: false };
+const runs = () => store.get("runs2", {});
+const saveRun = (n, rec) => { const all = runs(); all[n] = rec; store.set("runs2", all); };
+const savedSongs = () => store.get("saved", []);
+function toggleSave(key) { const s = savedSongs(); const i = s.indexOf(key); if (i >= 0) s.splice(i, 1); else s.unshift(key); store.set("saved", s); toast(i >= 0 ? "Removed from Saved" : "Saved"); render(); }
+function streak() { const r = runs(); let n = today; if (!r[n]?.done) n--; let c = 0; while (r[n]?.done) { c++; n--; } return c; }
+
+/* ---------- audio ---------- */
+const audio = $("#audio"); let playingKey = null, stopAt = 0, playTimer = null;
+function playSong(song, seconds = DATA?.clip || 10, keyOverride) {
+  const k = keyOverride || song.key;
+  if (playingKey === k) { stopAudio(); return; }
+  stopAudio();
+  if (!song.clip) { toast("No preview for this one"); return; }
+  const start = (song.clip.i % 50) * DATA.clip;
+  const src = `audio/${song.clip.y}-${Math.floor(song.clip.i / 50)}.mp4`;
+  if (!audio.src.endsWith(src)) audio.src = src;
+  const go = () => { audio.currentTime = start; audio.play().then(() => { playingKey = k; stopAt = start + Math.min(seconds, DATA.clip) - 0.05; render(); }).catch(() => toast("Tap again to play")); };
+  if (audio.readyState >= 1) go(); else { audio.addEventListener("loadedmetadata", go, { once: true }); audio.load(); }
+}
+function stopAudio() { audio.pause(); if (playingKey) { playingKey = null; render(); } }
+audio.addEventListener("timeupdate", () => { if (playingKey && audio.currentTime >= stopAt) stopAudio(); });
+audio.addEventListener("ended", stopAudio);
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg) { let t = $(".toast"); if (!t) { t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); document.body.appendChild(t); } t.textContent = msg; clearTimeout(toastT); toastT = setTimeout(() => t.remove(), 2200); }
+
+/* ---------- game flow ---------- */
+let tick = null;
+function startDay(n) {
+  state.day = n; const r = runs()[n];
+  state.run = r && !r.done ? r : { answers: [], score: 0, done: false, hints: [] };
+  if (r?.done) { state.run = r; state.view = "results"; render(); return; }
+  state.idx = state.run.answers.length; startPrompt();
+}
+function startPrompt() {
+  stopAudio(); state.view = "prompt"; state.typed = ""; state.err = ""; state.sugg = []; state.sel = 0; state.hintUsed = false; state.timeLeft = PROMPT_SECONDS;
+  render(); $("#answer")?.focus();
+  clearInterval(tick); const t0 = Date.now();
+  tick = setInterval(() => { state.timeLeft = Math.max(0, PROMPT_SECONDS - (Date.now() - t0) / 1000); updateTimer(); if (state.timeLeft <= 0) { clearInterval(tick); submit(null); } }, 250);
+}
+function updateTimer() { const t = $(".timer"); if (!t) return; t.classList.toggle("low", state.timeLeft <= 5); $(".timer .bar span").style.transform = `scaleX(${state.timeLeft / PROMPT_SECONDS})`; $(".timer .t").textContent = "0:" + String(Math.ceil(state.timeLeft)).padStart(2, "0"); }
+function submit(song) {
+  const { prompts } = promptsFor(state.day), p = prompts[state.idx];
+  const used = state.run.answers.filter(Boolean).map(a => a.key);
+  if (song && (!p.answers.includes(song) || used.includes(song.key))) {
+    const onChart = p.years.some(y => song.ranks[y] != null), where = p.years.length === 1 ? `the ${p.years[0]} chart` : `the ${YEARS[0]}–${YEARS[YEARS.length - 1]} charts`;
+    state.err = used.includes(song.key) ? `You already used “${song.t}” today. Try another.` : onChart ? `“${song.t}” doesn’t fit this prompt. Try another.` : `“${song.t}” isn’t on ${where}. Try another.`;
+    state.typed = ""; state.sugg = []; state.sel = 0; render(); const i = $("#answer"); if (i) { i.value = ""; i.focus(); } return;
+  }
+  clearInterval(tick); stopAudio(); state.err = "";
+  let pts = 0, ok = false;
+  if (song && p.answers.includes(song) && !used.includes(song.key)) { ok = true; pts = scoreFor(song, p); if (state.hintUsed) pts = Math.round(pts / 2); }
+  state.run.answers[state.idx] = song ? { key: song.key, pts, ok, hint: state.hintUsed, dupe: used.includes(song.key) } : null;
+  state.run.score = state.run.answers.reduce((a, x) => a + (x ? x.pts : 0), 0);
+  if (state.idx === 6) state.run.done = true;
+  saveRun(state.day, state.run); pushPlay(state.day, state.run);
+  state.view = "reveal"; render(); window.scrollTo(0, 0);
+}
+function next() { stopAudio(); if (state.run.done) { state.view = "results"; render(); window.scrollTo(0, 0); return; } state.idx++; startPrompt(); }
+function search(q) {
+  const n = norm(q); if (n.length < 2) return [];
+  const terms = n.split(" ");
+  return CATALOG.map(s => { const hay = s.nt + " " + s.na; if (!terms.every(t => hay.includes(t))) return null;
+    const score = (s.nt.startsWith(n) ? 0 : s.nt.includes(n) ? 1 : 2) + (Math.min(...Object.values(s.ranks)) / 1000); return [score, s]; })
+    .filter(Boolean).sort((a, b) => a[0] - b[0]).slice(0, 6).map(x => x[1]);
+}
+function useHint() {
+  if (state.hintUsed) return; const { prompts } = promptsFor(state.day), p = prompts[state.idx];
+  const used = state.run.answers.filter(Boolean).map(a => a.key);
+  const opts = p.answers.filter(s => s.clip && !used.includes(s.key)).sort((a, b) => bestRank(b, p) - bestRank(a, p));
+  if (!opts.length) { toast("No hint available"); return; }
+  state.hintUsed = true; const pick = opts[Math.floor(rng(state.day * 31 + state.idx)() * Math.min(5, opts.length))];
+  playSong(pick, HINT_SECONDS, "hint"); toast("Hint playing. This prompt is worth half points.");
+}
+
+/* ---------- views ---------- */
+const navItems = [["home", "Today", I.today], ["records", "Records", I.records], ["saved", "Saved", I.saved], ["how", "How to play", I.help]];
+function nav(active) {
+  return `<nav class="tabbar" aria-label="Main">${navItems.map(([v, l, ic]) => `<button data-nav="${v}" ${active === v ? 'aria-current="page"' : ""}>${ic}<span>${l}</span></button>`).join("")}</nav>`;
+}
+function deskbar(active) { return `<div class="deskbar"><div class="wordmark">needle</div>${nav(active).replace('class="tabbar"', 'class="tabbar desk"')}</div>`; }
+
+function viewHome() {
+  const n = state.day = today, { theme } = promptsFor(n), r = runs()[n], y = runs()[n - 1];
+  const pts = r ? r.answers.map(a => a ? a.pts : 0) : [];
+  const label = r?.done ? "See your record" : r?.answers?.length ? `Keep going · prompt ${r.answers.length + 1} of 7` : "Start today’s record";
+  const st = streak();
+  return `${deskbar("home")}<div class="view">
+  <div class="top mobilebar"><div class="wordmark">needle</div><span class="pill"><span class="dot"></span>${st}-day streak</span></div>
+  <div class="split">
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px"><span class="lab">No. ${n} · ${esc(fmtDate(dateOf(n)))}</span><h1>${esc(theme.name)}</h1><p class="sub" style="margin:0;max-width:44ch">${esc(theme.blurb)}</p></div>
+      <div class="center mobile-only" style="padding:6px 0">${recordEl(pts, { arm: true, armRest: !pts.length, shadow: true, size: 240, label: "No. " + n })}</div>
+      <button class="btn" data-act="start">${label}${I.arrow}</button>
+      <span class="lab" style="text-align:center">7 prompts · 25 sec each · about 4 min</span>
+      ${y?.done ? `<button class="yesterday" data-act="day" data-day="${n - 1}"><span class="rec" style="--rs:44px;width:44px;margin:0">${recordSVG(y.answers.map(a => a ? a.pts : 0))}</span><span class="grow"><span class="lab">Yesterday · ${esc(themeForDay(n - 1).name)}</span><span style="display:block;font-weight:500">${y.score} pts</span></span>${I.chev}</button>` : ""}
+    </div>
+    <div class="center desk-only">${recordEl(pts, { arm: true, armRest: !pts.length, shadow: true, size: 440, label: "No. " + n })}</div>
+  </div></div>${nav("home").replace('class="tabbar"', 'class="tabbar mobilebar"')}`;
+}
+function playHead() {
+  const pts = state.run.answers.map(a => a ? a.pts : 0);
+  return `<div class="playhead"><button class="iconbtn" data-act="quit" aria-label="Leave and save progress">${I.close}</button>
+  <div class="steps" aria-label="Prompt ${state.idx + 1} of 7">${Array.from({ length: 7 }, (_, i) => `<i class="${i < state.run.answers.length && !(state.view === "prompt" && i === state.idx) ? "done" : ""} ${i === state.idx ? "now" : ""}"></i>`).join("")}</div>
+  <div class="score-mini"><span class="rec" style="--rs:24px;width:24px;margin:0">${recordSVG(pts)}</span><span class="num">${state.run.score}</span></div></div>`;
+}
+function viewPrompt() {
+  const { theme, prompts } = promptsFor(state.day), p = prompts[state.idx];
+  const sel = state.sugg[state.sel];
+  return `<div class="view" style="max-width:640px;margin:0 auto;width:100%">${playHead()}
+  <div class="timer"><div class="bar"><span style="transform:scaleX(${state.timeLeft / PROMPT_SECONDS})"></span></div><span class="t">0:${String(Math.ceil(state.timeLeft)).padStart(2, "0")}</span></div>
+  <div class="q"><span class="lab">Prompt ${state.idx + 1} of 7 · ${esc(theme.name)}</span><h2>${esc(p.text)}</h2><span class="sub">${esc(theme.scope)}</span></div>
+  <form class="inputrow" id="f" autocomplete="off"><label for="answer" class="vh">Song title or artist</label>
+    <input id="answer" type="text" placeholder="Search a song or artist" value="${esc(state.typed)}" enterkeyhint="go" spellcheck="false" autocapitalize="off">
+    <button class="go ${sel ? "ready" : ""}" type="submit" aria-label="Submit answer">${I.arrow}</button></form>
+  ${state.err ? `<p class="err" role="alert">${esc(state.err)}</p>` : ""}
+  <div id="sugg">${suggHTML()}</div>
+  <div class="hint ${playingKey === "hint" ? "playing" : ""}"><button data-act="hint" ${state.hintUsed ? "disabled" : ""}>${wave()} ${state.hintUsed ? "Hint used" : "Blanking? Hear a 3-sec hint"}</button><span class="lab">½ points</span></div>
+  </div>`;
+}
+function suggHTML() {
+  if (!state.sugg.length) return state.typed.length >= 2 ? `<p class="sub" style="margin:0">No songs match “${esc(state.typed)}”. Try the artist’s name.</p>` : "";
+  return `<div class="sugg" role="listbox" aria-label="Matching songs">${state.sugg.map((s, i) => `<button role="option" aria-selected="${i === state.sel}" class="${i === state.sel ? "on" : ""}" data-pick="${i}">${coverEl(s, 36, 7)}<span class="meta"><span class="t1" style="display:block">${esc(s.t)}</span><span class="t2" style="display:block">${esc(s.a)}</span></span>${i === state.sel ? '<span class="kbd">return</span>' : ""}</button>`).join("")}</div>`;
+}
+function songRow(s, p, role, roleDeep) {
+  const pts = scoreFor(s, p), saved = savedSongs().includes(s.key), on = playingKey === s.key;
+  return `<div class="lrow"><span class="tier" style="background:var(${tierVar(pts)})"></span><span class="cv-wrap">${coverEl(s, 44).replace('class="cv"', `class="cv ${on ? "spin" : ""}"`)}</span>
+  <span class="grow">${role ? `<span class="lab ${roleDeep ? "deep" : ""}" style="font-size:10px;display:block">${role}</span>` : ""}<span class="t1" style="display:block">${esc(s.t)}</span><span class="t2" style="display:block">${esc(s.a)} · ${rankLine(s, p)}</span></span>
+  <button class="playbtn o" data-play="${esc(s.key)}" aria-label="${on ? "Stop" : "Play"} ${esc(s.t)}">${on ? I.pause : I.play}</button>
+  <button class="iconbtn ${saved ? "on" : ""}" data-save="${esc(s.key)}" aria-label="${saved ? "Remove" : "Save"} ${esc(s.t)}">${saved ? I.check : I.plus}</button></div>`;
+}
+function otherAnswers(p, mine, idx) {
+  const st = dayStats(state.day), c = st.counts[idx], said = k => c.get(k) || 0, others = st.players > (mine ? 1 : 0);
+  const pool = p.answers.filter(s => s.key !== mine), byRank = pool.slice().sort((a, b) => bestRank(a, p) - bestRank(b, p));
+  if (!byRank.length) return [];
+  let most = byRank[0];
+  if (others) { const top = pool.slice().sort((a, b) => said(b.key) - said(a.key))[0]; if (top && said(top.key) > 0) most = top; }
+  const nobody = byRank.slice().reverse().find(s => !said(s.key) && s !== most) || byRank[byRank.length - 1];
+  const mid = byRank[Math.floor(byRank.length / 2)] !== most && byRank[Math.floor(byRank.length / 2)] !== nobody ? byRank[Math.floor(byRank.length / 2)] : byRank.find(s => s !== most && s !== nobody);
+  return [[others && said(most.key) ? "Most said" : "The obvious one", most, false], [mid && "In between", mid, false], [others ? "Nobody said" : "The deepest cut", nobody, true]].filter(x => x[1]);
+}
+function viewReveal() {
+  const { prompts } = promptsFor(state.day), p = prompts[state.idx], a = state.run.answers[state.idx];
+  const song = a && BYKEY.get(a.key), pts = state.run.answers.map(x => x ? x.pts : 0);
+  const base = a ? (a.ok ? scoreFor(song, p) : 0) : 0, lines = REACT[a?.ok ? base : 0], onChart = song && p.years.some(y => song.ranks[y] != null);
+  const line = a?.dupe ? "You already used that one today." : !a ? "Out of time." : !a.ok ? (onChart ? "Right chart, wrong prompt." : "Not on that chart.") : lines[state.idx % 2];
+  const st = dayStats(state.day), said = song ? (st.counts[state.idx].get(song.key) || 0) : 0, pct = st.players > 1 && song ? Math.round(said / st.players * 100) : null;
+  const tier = a?.ok ? tierFor(bestRank(song, p))[2] : "";
+  return `<div class="view" style="max-width:640px;margin:0 auto;width:100%">${playHead()}
+  <div class="verdict"><div class="rec shadow" style="--rs:160px;aspect-ratio:112/100">${recordSVG(pts, { arm: true })}</div>
+    <div style="min-width:0"><div class="big num">+${a ? a.pts : 0}</div><div class="voice" style="font-size:24px;line-height:1.1">${esc(line)}</div>${tier ? `<span class="lab deep">${tier}${a.hint ? " · hint, half points" : ""}</span>` : ""}</div></div>
+  ${song ? `<div class="youcard">${coverEl(song, 64, 12).replace('class="cv"', `class="cv ${playingKey === song.key ? "spin" : ""}"`)}<div class="grow"><span class="lab" style="font-size:10px">Your answer</span><div class="t1" style="font-size:17px">${esc(song.t)}</div><div class="t2">${esc(song.a)}</div>
+    <div class="mono" style="font-size:12px;color:${a.ok ? "var(--deep)" : "var(--mute)"}">${a.ok ? rankLine(song, p) + (pct != null ? ` · ${pct}% said it` : "") : a.dupe ? "Already used today" : "Doesn’t fit this prompt"}</div></div>
+    <button class="playbtn" data-play="${esc(song.key)}" aria-label="Play ${esc(song.t)}">${playingKey === song.key ? I.pause : I.play}</button></div>` : ""}
+  <div style="display:flex;justify-content:space-between"><span class="lab" style="color:var(--ink)">Other answers</span><span class="lab">Tap to play</span></div>
+  <div class="list">${otherAnswers(p, song?.key, state.idx).map(([r, s, d]) => songRow(s, p, r, d)).join("")}</div>
+  <div class="sticky"><button class="btn" data-act="next">${state.run.done ? "See your record" : "Next prompt"}<span style="display:flex;align-items:center;gap:8px"><span class="lab" style="color:inherit;opacity:.6">${state.run.done ? "" : `${state.idx + 2} of 7`}</span>${I.arrow}</span></button></div>
+  </div>`;
+}
+function verdictLine(score) { return score >= 600 ? "Played to the label." : score >= 450 ? "Deep in the grooves." : score >= 300 ? "Halfway to the label." : score >= 150 ? "Just past the edge." : "Barely scratched it."; }
+function viewResults() {
+  const n = state.day, { theme, prompts } = promptsFor(n), r = state.run, pts = r.answers.map(a => a ? a.pts : 0);
+  const st = dayStats(n), scores = st.scores, better = scores.filter(s => s < r.score).length, top = scores.length > 1 ? Math.max(1, Math.round((1 - better / scores.length) * 100)) : null;
+  const bins = Array(24).fill(0); scores.forEach(s => bins[Math.min(23, Math.floor(s / 700 * 24))]++); const mx = Math.max(1, ...bins), mine = Math.min(23, Math.floor(r.score / 700 * 24));
+  const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+  const nextN = today + 1, nextTheme = themeForDay(nextN);
+  return `${deskbar("home")}<div class="view">
+  <div class="top mobilebar"><button class="iconbtn" data-nav="home" aria-label="Back to today">${I.close}</button><span class="lab" style="color:var(--ink)">No. ${n} · ${esc(theme.name)}</span><span style="width:34px"></span></div>
+  <div class="split"><div style="display:flex;flex-direction:column;gap:22px;min-width:0">
+    <div class="center mobile-only">${recordEl(pts, { arm: true, shadow: true, size: 236, label: "No. " + n })}</div>
+    <div style="display:flex;flex-direction:column;align-items:flex-start;gap:4px"><span class="lab desk-only">No. ${n} · ${esc(theme.name)}</span><div style="display:flex;align-items:baseline;gap:8px"><span class="big num">${r.score}</span><span class="mono sub">/ 700</span></div><div class="voice" style="font-size:28px">${verdictLine(r.score)}</div></div>
+    <div class="row2"><button class="btn" data-act="share" style="justify-content:center;gap:10px;white-space:nowrap;font-size:16px">${I.share}Share</button><button class="btn ghost" data-act="saveall" style="white-space:nowrap;font-size:16px">Save all 7</button></div>
+    <div class="card" style="display:flex;flex-direction:column;gap:12px">
+      ${scores.length > 1 ? `<div style="display:flex;justify-content:space-between;align-items:flex-end"><div><span class="lab">You vs everyone</span><div style="font-size:36px;letter-spacing:-.04em">Top ${top}%</div></div><div style="text-align:right"><div class="mono num">${scores.length.toLocaleString()}</div><span class="lab" style="font-size:10px">players</span></div></div>
+      <div class="hist" aria-label="Score spread">${bins.map((b, i) => `<i class="${i === mine ? "me" : ""}" style="height:${Math.max(4, b / mx * 100)}%"></i>`).join("")}</div>
+      <div style="display:flex;justify-content:space-between" class="lab"><span>0</span><span>Average ${avg}</span><span>700</span></div>`
+      : `<span class="lab">You vs everyone</span><p class="sub" style="margin:0">${db ? "You’re the first to finish today’s record. The spread fills in as others play." : "Scores from other players show up when you open needle signed in to Claude."}</p>`}
+    </div>
+    <div style="display:flex;justify-content:space-between"><span class="lab" style="color:var(--ink)">Your seven</span><span class="lab">Rank · points</span></div>
+    <div class="list">${prompts.map((p, i) => { const a = r.answers[i], s = a && BYKEY.get(a.key);
+      return s ? songRow(s, p, p.label, false).replace(/<button class="playbtn o"/, `<span class="mono num" style="font-size:13px;color:${a.pts >= 85 ? "var(--deep)" : "var(--ink)"}">+${a.pts}</span><button class="playbtn o"`)
+               : `<div class="lrow"><span class="tier" style="background:var(--hair)"></span><span class="grow"><span class="lab" style="font-size:10px;display:block">${esc(p.label)}</span><span class="t2">No answer</span></span><span class="mono" style="font-size:13px">+0</span></div>`; }).join("")}</div>
+    ${n === today ? `<div class="teaser"><div><span class="lab">Tomorrow</span><div style="font-weight:500">${esc(nextTheme.name)}</div></div><span class="mono num" id="countdown"></span></div>` : ""}
+  </div><div class="center desk-only">${recordEl(pts, { arm: true, shadow: true, size: 420, label: "No. " + n })}</div></div>
+  </div>${nav("home").replace('class="tabbar"', 'class="tabbar mobilebar"')}`;
+}
+function viewRecords() {
+  const all = runs(), done = Object.values(all).filter(r => r.done), saved = savedSongs();
+  const best = done.length ? Math.max(...done.map(r => r.score)) : 0;
+  const days = []; for (let n = today; n >= Math.max(1, today - 29); n--) days.push(n);
+  const body = state.tab === "records"
+    ? `<div class="grid">${days.map(n => { const r = all[n], t = themeForDay(n);
+        return `<button class="gitem" data-act="day" data-day="${n}">${r?.done ? `<span class="rec">${recordSVG(r.answers.map(a => a ? a.pts : 0))}</span>` : `<span class="empty-disc">${r ? "Finish" : "Play"}</span>`}
+        <span class="lab" style="font-size:9px">No. ${n} · ${esc(fmtShort(dateOf(n)))}</span><span style="font-weight:500;font-size:13px;line-height:1.25">${esc(t.name)}</span><span class="mono" style="font-size:11px;color:${r?.done ? "var(--ink)" : "var(--deep)"}">${r?.done ? r.score + " pts" : n === today ? "Today" : "Not played"}</span></button>`; }).join("")}</div>`
+    : savedList(saved);
+  return `${deskbar("records")}<div class="view">
+  <div class="top"><h2 style="font-size:30px">Your records</h2></div>
+  <div class="stats"><div><b class="num">${done.length}</b><span>records</span></div><div><b class="num">${saved.length}</b><span>songs saved</span></div><div><b class="num">${streak()}</b><span>day streak</span></div><div><b class="num">${best}</b><span>best</span></div></div>
+  <div class="seg" role="tablist"><button role="tab" aria-selected="${state.tab === "records"}" data-tab="records">Records</button><button role="tab" aria-selected="${state.tab === "saved"}" data-tab="saved">Saved songs</button></div>
+  ${body}</div>${nav("records").replace('class="tabbar"', 'class="tabbar mobilebar"')}`;
+}
+function savedList(saved) {
+  if (!saved.length) return `<p class="sub">Nothing saved yet. Tap + next to any song on a reveal to keep it here.</p>`;
+  const fake = { years: YEARS };
+  return `<div class="list">${saved.map(k => BYKEY.get(k)).filter(Boolean).map(s => songRow(s, fake, "", false)).join("")}</div>`;
+}
+function viewSaved() { return `${deskbar("saved")}<div class="view"><div class="top"><h2 style="font-size:30px">Saved songs</h2><span class="lab">${savedSongs().length}</span></div>${savedList(savedSongs())}</div>${nav("saved").replace('class="tabbar"', 'class="tabbar mobilebar"')}`; }
+function sheetHTML() {
+  return `<div class="scrim" data-act="closesheet"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="howt">
+  <div class="grab"></div><div><h2 id="howt" style="font-size:28px">How it works</h2><p class="sub" style="margin:4px 0 0">Takes about 4 minutes a day.</p></div>
+  <div class="step"><div class="vis"><span style="background:var(--paper);border-radius:999px;padding:6px 10px">Supers<span style="color:var(--sig)">|</span></span></div><div><span class="lab deep" style="font-size:10px">01</span><h3>Name a song</h3><p class="sub" style="margin:2px 0 0">7 prompts, 25 seconds each. It has to have made that year’s top 100.</p></div></div>
+  <div class="step"><div class="vis"><span>#1 &nbsp;+10<br>#96 <span style="color:var(--deep)">+100</span></span></div><div><span class="lab deep" style="font-size:10px">02</span><h3>Dig deeper</h3><p class="sub" style="margin:2px 0 0">A #1 hit gets you 10 points. Something that scraped in at #96 gets you 100.</p></div></div>
+  <div class="step"><div class="vis"><span class="rec" style="--rs:60px;width:60px">${recordSVG([10, 30, 85, 60])}</span></div><div><span class="lab deep" style="font-size:10px">03</span><h3>Fill your record</h3><p class="sub" style="margin:2px 0 0">Every answer moves the needle in. Then hear the songs you missed.</p></div></div>
+  <button class="btn" data-act="closesheet" style="justify-content:center">Got it, let’s play</button></div></div>`;
+}
+
+/* ---------- render ---------- */
+function render() {
+  if (!DATA) return;
+  const app = $("#app"); const v = state.view;
+  const html = v === "home" ? viewHome() : v === "prompt" ? viewPrompt() : v === "reveal" ? viewReveal() : v === "results" ? viewResults() : v === "records" ? viewRecords() : v === "saved" ? viewSaved() : viewHome();
+  const focused = document.activeElement?.id, caret = focused === "answer" ? document.activeElement.selectionStart : null;
+  app.innerHTML = html + (state.sheet ? sheetHTML() : "");
+  document.querySelectorAll(".mobile-only").forEach(e => { e.hidden = matchMedia("(min-width:900px)").matches; });
+  document.querySelectorAll(".desk-only").forEach(e => { e.hidden = !matchMedia("(min-width:900px)").matches; });
+  if (focused === "answer") { const i = $("#answer"); if (i) { i.focus(); i.setSelectionRange(caret, caret); } }
+  updateCountdown();
+}
+function updateCountdown() { const el = $("#countdown"); if (!el) return; const t = dateOf(today + 1) - new Date(); const h = Math.floor(t / 3.6e6), m = Math.floor(t % 3.6e6 / 6e4), s = Math.floor(t % 6e4 / 1e3); el.textContent = [h, m, s].map(x => String(x).padStart(2, "0")).join(":"); }
+setInterval(updateCountdown, 1000);
+addEventListener("resize", () => render());
+
+/* ---------- events ---------- */
+document.addEventListener("click", e => {
+  const t = e.target.closest("button,[data-act]"); if (!t) return;
+  if (t.dataset.act === "closesheet" && (t.tagName === "BUTTON" || e.target === t)) { state.sheet = false; store.set("seenHow", true); render(); return; }
+  if (t.dataset.nav) { stopAudio(); clearInterval(tick); if (t.dataset.nav === "how") { state.sheet = true; render(); return; } state.view = t.dataset.nav; if (t.dataset.nav === "records") state.tab = "records"; render(); window.scrollTo(0, 0); return; }
+  if (t.dataset.tab) { state.tab = t.dataset.tab; render(); return; }
+  if (t.dataset.pick != null) { const s = state.sugg[+t.dataset.pick]; if (s) submit(s); return; }
+  if (t.dataset.play) { const s = BYKEY.get(t.dataset.play); if (s) playSong(s); return; }
+  if (t.dataset.save) { toggleSave(t.dataset.save); return; }
+  switch (t.dataset.act) {
+    case "start": startDay(today); break;
+    case "day": { const n = +t.dataset.day, r = runs()[n]; if (r?.done) { state.day = n; state.run = r; state.view = "results"; render(); window.scrollTo(0, 0); } else startDay(n); break; }
+    case "hint": useHint(); break;
+    case "next": next(); break;
+    case "quit": clearInterval(tick); stopAudio(); state.view = "home"; render(); toast("Progress saved"); break;
+    case "share": share(); break;
+    case "saveall": { const s = savedSongs(); state.run.answers.filter(Boolean).forEach(a => { if (!s.includes(a.key)) s.push(a.key); }); store.set("saved", s); toast("Saved your seven"); render(); break; }
+  }
+});
+document.addEventListener("input", e => {
+  if (e.target.id !== "answer") return; state.typed = e.target.value; state.sugg = search(state.typed); state.sel = 0;
+  if (state.err) { state.err = ""; $(".err")?.remove(); }
+  $("#sugg").innerHTML = suggHTML(); $(".go")?.classList.toggle("ready", !!state.sugg[0]);
+});
+document.addEventListener("keydown", e => {
+  if (e.target.id !== "answer" || !state.sugg.length) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); state.sel = (state.sel + (e.key === "ArrowDown" ? 1 : -1) + state.sugg.length) % state.sugg.length; $("#sugg").innerHTML = suggHTML(); }
+});
+document.addEventListener("submit", e => { e.preventDefault(); if (e.target.id === "f") { const s = state.sugg[state.sel]; if (s) submit(s); else toast("Pick a song from the list"); } });
+async function share() {
+  const r = state.run, n = state.day, { theme } = promptsFor(n);
+  const text = `needle No. ${n} · ${theme.name}\n${r.answers.map(a => SHARE_GLYPH(a ? a.pts : 0)).join(" ")}  ${r.score}/700\n${verdictLine(r.score)}`;
+  try { await navigator.clipboard.writeText(text); toast("Copied. Paste it in your group chat."); } catch { toast(text.split("\n")[1]); }
+}
+
+/* ---------- boot ---------- */
+Promise.all([fetch("data/songs.json").then(r => r.json()), fetch("data/tags.json").then(r => r.json())]).then(([j, tg]) => {
+  TAGMAP = tg; buildCatalog(j); window.__needle = { promptsFor, themes: () => THEMES.map(t => t.name) }; state.view = "home"; state.sheet = !store.get("seenHow", false); render(); connectDb();
+}).catch(() => { $("#app").innerHTML = `<div class="loading"><div class="wordmark">needle</div><p class="sub">The charts didn’t load. Refresh to try again.</p></div>`; });
+})();
+</script>
+
+</body></html>
