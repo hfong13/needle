@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>needle</title><meta name="description" content="A daily music game: name songs from the 2006–2010 year-end Hot 100. The deeper the cut, the more it scores.">
+<title>needle</title><meta name="description" content="A daily music game: name the biggest songs of the late 2000s. The deeper the cut, the more it scores.">
 <meta property="og:title" content="needle"><meta property="og:description" content="How deep does your taste go? A daily music game.">
 <meta name="theme-color" content="#FBFAF7">
 <meta property="og:type" content="website"><meta property="og:url" content="https://hfong13.github.io/needle/"><meta property="og:image" content="https://hfong13.github.io/needle/og.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="needle: a daily music game. A vinyl record filled with orange bands."><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="needle"><meta name="twitter:description" content="How deep does your taste go? A daily music game."><meta name="twitter:image" content="https://hfong13.github.io/needle/og.jpg">
@@ -329,21 +329,23 @@ const COMBO = {
 };
 const hasTags = (s, t) => [...t].every(c => s.tags.has(c));
 function buildThemes() {
-  const span = `${YEARS[0]}–${YEARS[YEARS.length - 1]}`, all = YEARS;
+  const all = YEARS, SCOPE = "Late-2000s Billboard hits only";
   const T = {};
   for (const y of YEARS) {
     const P = [{ text: `Name a hit from ${y}.`, label: `Any ${y} hit`, years: [y], ok: s => inYear(s, y) }];
     for (const t of "LBPRWGFKCSDIM") P.push({ text: TAGS[t].yr(y), label: TAGS[t].label, years: [y], ok: s => inYear(s, y) && hasTags(s, t) });
-    T["y" + y] = { id: "y" + y, name: `The ${y} chart`, scope: `Answers from the ${y} year-end Hot 100`, blurb: `Seven prompts. Every answer has to be a hit from ${y}.`, fixedFirst: true, pool: P };
+    T["y" + y] = { id: "y" + y, name: `${y} hits`, scope: `From the ${y} Billboard year-end chart`, blurb: `Seven prompts, all songs from ${y}.`, fixedFirst: true, pool: P };
   }
   const tagP = t => t.length === 1 ? { text: TAGS[t].any, label: TAGS[t].label, years: all, ok: s => hasTags(s, t) } : { text: COMBO[t][0], label: COMBO[t][1], years: all, ok: s => hasTags(s, t) };
-  T.love = { id: "love", name: "Love & heartbreak", scope: `Answers from the ${span} year-end charts`, blurb: `Crushes, breakups and everything between, ${span}.`, pool: ["L", "B", "S", "LC", "BW", "LG", "LR", "LK", "BK", "BR"].map(tagP) };
-  T.party = { id: "party", name: "Party night", scope: `Answers from the ${span} year-end charts`, blurb: `Club hits, dance crazes and money songs, ${span}.`, pool: ["P", "D", "R", "PW", "M", "PF", "PG"].map(tagP) };
-  T.bands = { id: "bands", name: "Bands, ballads & Idols", scope: `Answers from the ${span} year-end charts`, blurb: `Guitars, slow songs and talent-show stars, ${span}.`, pool: ["K", "G", "S", "I", "C", "LK", "BK", "LG"].map(tagP) };
-  T.mix = { id: "mix", name: "Late-2000s mixtape", scope: `Answers from the ${span} year-end charts`, blurb: `A bit of everything from ${span}.`, pool: ["L", "B", "P", "R", "C", "K", "W", "G", "D", "I", "S", "M", "F"].map(tagP) };
-  T.her = { id: "her", name: "Her era", scope: `Answers from the ${span} year-end charts`, blurb: `Pop queens, country stars and girl groups, ${span}.`, pool: ["W", "LW", "BW", "PW", "SW", "CW", "FW"].map(tagP) };
-  T.feat = { id: "feat", name: "The featuring era", scope: `Answers from the ${span} year-end charts`, blurb: `When every hit had a guest verse, ${span}.`, pool: ["F", "PF", "RF", "LF", "R", "M", "LR"].map(tagP) };
-  const order = ["y2006", "love", "y2007", "party", "y2008", "her", "y2009", "bands", "y2010", "feat", "mix"];
+  const yearP = (t, y) => ({ text: TAGS[t].yr(y), label: `${TAGS[t].label}, ${y}`, years: [y], ok: s => inYear(s, y) && hasTags(s, t) });
+  const cat = (id, name, blurb, tag, extra) => ({ id, name, blurb, scope: SCOPE, fixedFirst: true, pool: [tagP(tag), ...extra.map(tagP), ...YEARS.map(y => yearP(tag, y))] });
+  T.love = cat("love", "Love songs", "Seven prompts, all love songs.", "L", ["LC", "LG", "LR", "LK", "LW", "LF"]);
+  T.breakup = cat("breakup", "Breakup songs", "Seven prompts, all heartbreak.", "B", ["BW", "BK", "BR", "S", "SW"]);
+  T.party = cat("party", "Party songs", "Seven prompts for the dance floor.", "P", ["PW", "PF", "PG", "D", "M"]);
+  T.rap = cat("rap", "2000s rap", "Seven prompts, all rap.", "R", ["RF", "LR", "BR", "M"]);
+  T.bands = cat("bands", "Bands & rock", "Seven prompts, all guitars and groups.", "K", ["G", "LK", "BK", "LG", "PG"]);
+  T.mix = { id: "mix", name: "2000s hits", scope: SCOPE, blurb: "A bit of everything.", pool: ["L", "B", "P", "R", "C", "K", "W", "G", "D", "I", "S", "M", "F"].map(tagP) };
+  const order = ["y2006", "love", "y2007", "party", "y2008", "breakup", "y2009", "rap", "y2010", "bands", "mix"];
   return order.map(k => T[k]).filter(t => t && t.pool.filter(p => CATALOG.filter(p.ok).length >= 4).length >= 7);
 }
 function themeForDay(n) {
@@ -604,8 +606,8 @@ function sheetHTML() {
   const tiers = TIERS.map(t => [t[1], t[2]]);
   return `<div class="scrim" data-act="closesheet"><div class="sheet how" role="dialog" aria-modal="true" aria-labelledby="howt">
   <div class="grab"></div>
-  <header class="how-hd"><span class="lab">How to play</span><h2 id="howt">Name the hits of ${span}.</h2>
-    <p class="sub">Every answer has to be a song from a Billboard year-end Hot 100 in those five years. Older or newer hits don’t count, even by the same artist.</p></header>
+  <header class="how-hd"><span class="lab">How to play</span><h2 id="howt">Name the biggest songs of the late 2000s.</h2>
+    <p class="sub">Every answer has to be on a Billboard year-end Hot 100 from ${span.replace("–", " to ")}. Anything older or newer doesn’t count.</p></header>
   <section class="card"><div class="card-hd"><span class="num">1</span><h3>Answer the prompt</h3><span class="lab">25 sec</span></div>
     <div class="mock"><span class="mock-q">Name a love song from 2008.</span><span class="mock-in">In Love with a Gi<i></i></span></div>
     <p class="sub">Type the title. Anything that doesn’t fit is ignored, so keep guessing until the clock runs out.</p></section>
