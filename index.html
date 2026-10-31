@@ -284,7 +284,7 @@ function recordSVG(pts, { arm = false, armRest = false, label = "" } = {}) {
 const recordEl = (pts, opts = {}) => `<div class="rec ${opts.shadow ? "shadow" : ""}" style="--rs:${opts.size || 260}px${opts.arm ? ";aspect-ratio:112/100" : ""}">${recordSVG(pts, opts)}</div>`;
 
 /* ---------- data ---------- */
-let CATALOG = [], BYKEY = new Map(), Y0 = 1980, Y1 = 2024, THEMES = null, BYARTIST = new Map();
+let CATALOG = [], BYKEY = new Map(), Y0 = 1980, Y1 = 2024, THEMES = null, BYARTIST = new Map(), APPEARS = new Map();
 const COVER = (md5, px) => `https://e-cdns-images.dzcdn.net/images/cover/${md5}/${px}x${px}-000000-80-0-0.jpg`;
 const coverEl = (s, px, r = 8) => `<span class="cv" style="width:${px}px;height:${px}px;border-radius:${r}px;${s.md5 ? `background-image:url(${COVER(s.md5, px > 90 ? 500 : 250)});background-size:cover` : ""}" aria-hidden="true"></span>`;
 function splitArtists(a) {
@@ -299,6 +299,7 @@ function buildCatalog(j) {
     s.years = Object.keys(ranks).map(Number).sort((x, y) => x - y); s.best = Math.min(...Object.values(ranks));
     CATALOG.push(s); BYKEY.set(s.key, s);
     const k = norm(s.main); if (!BYARTIST.has(k)) BYARTIST.set(k, []); BYARTIST.get(k).push(s);
+    s.a.split(/\s+(?:featuring|feat\.?|ft\.?|with|and|&|x|vs\.?)\s+|,\s*/i).map(norm).filter(Boolean).forEach(nm => APPEARS.set(nm, (APPEARS.get(nm) || 0) + 1));
   }
   // How well-known is it? Half chart run (how high, how long), half how much it's still played.
   const pct = get => { const v = CATALOG.filter(s => get(s) != null).sort((a, b) => get(a) - get(b)), m = new Map(); v.forEach((s, i) => m.set(s, i / Math.max(1, v.length - 1))); return m; };
@@ -319,7 +320,7 @@ function buildThemes() {
     { id: "love", name: "Love songs", blurb: "Five hits with love on their mind, from any year.", pick: s => /\b(love|lover|lovin|loving|heart|kiss)\b/i.test(s.t) },
     { id: "top", name: "The biggest hits", blurb: "Five songs that finished a year in the top 5.", pick: s => s.best <= 5 },
     { id: "feat", name: "Featuring", blurb: "Five hits with a guest artist.", pick: s => s.featured },
-    { id: "one", name: "One-hit wonders", blurb: "Five artists who made the year-end chart just once.", pick: s => BYARTIST.get(norm(s.main)).length === 1 && s.years.length === 1 },
+    { id: "one", name: "One-hit wonders", blurb: "Five artists who made the year-end chart just once.", pick: s => { const names = s.a.split(/\s+(?:featuring|feat\.?|ft\.?|with|and|&|x|vs\.?)\s+|,\s*/i).map(norm).filter(Boolean); return s.years.length === 1 && names.every(nm => APPEARS.get(nm) === 1); } },
     { id: "deep", name: "Deep cuts", blurb: "Five songs that only scraped in, somewhere between #70 and #100.", pick: s => s.best >= 70 },
     { id: "mix", name: "Anything goes", blurb: `Five hits from anywhere between ${Y0} and ${Y1}.`, pick: () => true }
   ].map(c => ({ range: [Y0, Y1], ...c })).filter(c => CATALOG.filter(c.pick).length >= 25);
@@ -334,7 +335,7 @@ function themeForDay(n) {
 function tracksFor(n) {
   const theme = themeForDay(n), r = rng(n * 7919 + 13);
   const pool = shuffle(CATALOG.filter(theme.pick), r).sort((a, b) => b.known - a.known);
-  const cand = shuffle(pool.slice(0, Math.max(N * 5, Math.round(pool.length * (theme.artist ? 1 : .45)))), r), picked = [];
+  const cand = shuffle(pool.slice(0, Math.max(N * 5, Math.round(pool.length * (theme.artist ? .7 : .45)))), r), picked = [];
   for (const s of cand) { if (picked.length === N) break; if (!picked.some(p => p.years[0] === s.years[0] || p.nt === s.nt)) picked.push(s); }
   for (const s of cand) { if (picked.length === N) break; if (!picked.some(p => p.nt === s.nt)) picked.push(s); }
   return { theme, tracks: picked };
