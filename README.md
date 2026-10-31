@@ -1,5 +1,9 @@
 # needle
 
-A daily music game. Each day has a theme and 7 prompts ("Name a 2008 hit", "Name a breakup song"). Every answer has to be a real hit from a Billboard year-end Hot 100 chart (2006–2010), and the deeper it ranked, the more it scores. Fill your record, then hear the songs you missed.
+A daily music game. Hear a hit from Billboard's year-end Hot 100 (1980–2024), then drop the needle on the year it charted. Five songs a day, each day with a theme: a decade, an artist, or a kind of song.
 
-Static site: `index.html` plus `data/` (charts and tags), `covers/` (cover sheets) and `audio/` (12-second preview clips).
+Play: https://hfong13.github.io/needle/
+
+- `index.html` is the whole game (no build step).
+- `data/charts.json` holds every year-end Hot 100 song from 1980 to 2024, matched to Deezer for 30-second previews and cover art.
+- Chart data from Wikipedia's "Billboard Year-End Hot 100 singles" pages. Previews and covers are served by Deezer.
