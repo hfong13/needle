@@ -160,6 +160,27 @@ h3{font-weight:500;font-size:17px;margin:0}
 .sheet{background:var(--paper);width:100%;max-width:520px;border-radius:28px 28px 0 0;padding:12px max(22px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(22px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:18px;max-height:92%;overflow:auto}
 @media (min-width:900px){.scrim{align-items:center}.sheet{border-radius:28px}}
 .grab{width:36px;height:5px;border-radius:3px;background:var(--hair);margin:0 auto}
+.how{gap:14px;max-width:480px}
+.how-hd{display:flex;flex-direction:column;gap:8px;padding:6px 2px 4px}
+.how-hd h2{font-size:30px;line-height:1.05;letter-spacing:-.02em;margin:0}.how-hd .sub{margin:0}
+.how .card{background:var(--wash);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.how .card.row{flex-direction:row;align-items:center;gap:16px}.how .card.row>div{display:flex;flex-direction:column;gap:6px}
+.how .card .sub{margin:0;font-size:14px;line-height:1.45}
+.card-hd{display:flex;align-items:center;gap:10px}.card-hd h3{margin:0;font-size:17px;flex:1}
+.num{width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font:500 11px var(--ff-mono);flex:none}
+.mock{background:var(--paper);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--hair)}
+.mock-q{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.mock-in{font:14px var(--ff-mono);background:var(--wash);border-radius:999px;padding:8px 12px;display:flex;align-items:center}
+.mock-in i{display:inline-block;width:1.5px;height:16px;background:var(--sig);margin-left:1px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.ex .cv{display:block;flex:none;background-color:var(--hair)}
+.ex{display:flex;align-items:center;gap:10px;background:var(--paper);border-radius:12px;padding:8px;border:1px solid var(--hair)}
+.ex-t{flex:1;display:flex;flex-direction:column;min-width:0}.ex-t b{font-weight:600;font-size:14px}.ex-t small{color:var(--mute);font-size:12px}
+.ex-p{font:500 13px var(--ff-mono);color:#141310;border-radius:999px;padding:4px 10px}
+.ladder{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;align-items:end;padding-top:4px}
+.ladder div{display:flex;flex-direction:column;align-items:center;gap:3px}
+.ladder i{display:block;width:100%;border-radius:6px 6px 3px 3px}
+.ladder b{font:500 13px var(--ff-mono)}.ladder small{font:10px var(--ff-mono);color:var(--mute);text-align:center;line-height:1.2}
 .step{display:flex;gap:16px;align-items:center}
 .step .vis{width:84px;height:84px;border-radius:18px;background:var(--wash);display:grid;place-items:center;flex:none;font-family:var(--ff-mono);font-size:12px}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--on-ink);padding:10px 16px;border-radius:999px;font-size:14px;z-index:30;max-width:calc(100% - 32px)}
@@ -181,9 +202,11 @@ h3{font-weight:500;font-size:17px;margin:0}
 /* ---------- constants ---------- */
 const EPOCH = new Date(2026, 5, 11); // day No. 1 = 11 June 2026, so 30 Oct 2026 is No. 142
 const PROMPT_SECONDS = 25, HINT_SECONDS = 3;
-const TIERS = [[10,10,"Smash hit","t10"],[40,30,"Hit","t30"],[70,60,"Charted","t60"],[90,85,"Deep cut","t85"],[100,100,"Forgotten","t85"]];
-const tierFor = r => TIERS.find(t => r <= t[0]);
-const pointsFor = r => tierFor(r)[1];
+// Songs are ranked by how well-known they are (chart run across every year + how much they're still played),
+// then cut into tiers: the most-known 10% score 10, the least-known 10% score 100.
+const TIERS = [[.10,10,"Smash hit"],[.40,30,"Big hit"],[.70,60,"Hit"],[.90,85,"Deep cut"],[1.01,100,"Forgotten"]];
+const tierAt = q => TIERS.find(t => q < t[0]);
+const tierOf = pts => TIERS.find(t => t[1] === pts) || TIERS[0];
 const tierVar = p => p >= 85 ? "--t85" : p >= 60 ? "--t60" : p >= 30 ? "--t30" : "--t10";
 const REACT = { 0:["Not on that list.","That one didn’t chart there."], 10:["Everyone said that.","The safe pick."], 30:["Solid.","A real hit."], 60:["Getting deeper.","Nice dig."], 85:["Ooh. That’s deep.","Now we’re digging."], 100:["Forgotten gem.","Straight to the label."] };
 const SHARE_GLYPH = p => p===0?"×":p>=100?"●":p>=85?"◕":p>=60?"◑":p>=30?"◔":"○";
@@ -262,12 +285,20 @@ function buildCatalog(json) {
     let s = BYKEY.get(key);
     if (!s) { s = { key, t: e.t, a: e.a, ranks: {}, slot: null, clip: null, tags: new Set(), ...splitArtists(e.a), nt: norm(e.t), na: norm(e.a) }; BYKEY.set(key, s); CATALOG.push(s); }
     for (const c of (TAGMAP[y + "-" + e.r] || "")) s.tags.add(c); if (s.featured) s.tags.add("F");
-    s.ranks[y] = e.r;
+    s.ranks[y] = e.r; if (e.z != null) s.z = Math.max(s.z || 0, e.z);
     if (!s.slot && e.c) s.slot = { y, i: e.i ?? i };
     if (!s.clip && e.p) s.clip = { y, i: e.i ?? i };
   });
+  rankKnown();
   THEMES = buildThemes();
 }
+function rankKnown() {
+  const pct = (get) => { const v = CATALOG.filter(s => get(s) != null).sort((a, b) => get(a) - get(b)), m = new Map(); v.forEach((s, i) => m.set(s, v.length > 1 ? i / (v.length - 1) : .5)); return m; };
+  const chart = pct(s => Object.values(s.ranks).reduce((t, r) => t + 101 - r, 0)), play = pct(s => s.z ? s.z : null);
+  CATALOG.forEach(s => { const c = chart.get(s), d = play.get(s); s.known = d == null ? c : (c + d) / 2; });
+  CATALOG.slice().sort((a, b) => b.known - a.known).forEach((s, i, arr) => { s.obscure = i / arr.length; s.pts = tierAt(s.obscure)[1]; });
+}
+const chartRun = s => Object.keys(s.ranks).sort().map(y => `#${s.ranks[y]} in ${y}`).join(" · ");
 const inYear = (s, y) => s.ranks[y] != null;
 const words = t => norm(t).split(" ").filter(Boolean);
 
@@ -291,7 +322,10 @@ const COMBO = {
   "LG": ["Name a love song by a band.", "Band love song"], "LR": ["Name a rap love song.", "Rap love song"],
   "PW": ["Name a party song by a female artist.", "Her party song"], "PF": ["Name a party song with a featured artist.", "Party feature"],
   "PG": ["Name a party song by a group.", "Group party song"], "LK": ["Name a rock love song.", "Rock love song"],
-  "BK": ["Name a rock breakup song.", "Rock breakup"], "BR": ["Name a rap breakup song.", "Rap breakup"]
+  "BK": ["Name a rock breakup song.", "Rock breakup"], "BR": ["Name a rap breakup song.", "Rap breakup"],
+  "LW": ["Name a love song by a female artist.", "Her love song"], "SW": ["Name a sad song by a female artist.", "Her sad song"],
+  "CW": ["Name a country song by a female artist.", "Her country song"], "FW": ["Name a hit by a female artist with a guest verse.", "Her feature"],
+  "RF": ["Name a rap song with a featured artist.", "Rap feature"], "LF": ["Name a love song with a featured artist.", "Love feature"]
 };
 const hasTags = (s, t) => [...t].every(c => s.tags.has(c));
 function buildThemes() {
@@ -307,13 +341,9 @@ function buildThemes() {
   T.party = { id: "party", name: "Party night", scope: `Answers from the ${span} year-end charts`, blurb: `Club hits, dance crazes and money songs, ${span}.`, pool: ["P", "D", "R", "PW", "M", "PF", "PG"].map(tagP) };
   T.bands = { id: "bands", name: "Bands, ballads & Idols", scope: `Answers from the ${span} year-end charts`, blurb: `Guitars, slow songs and talent-show stars, ${span}.`, pool: ["K", "G", "S", "I", "C", "LK", "BK", "LG"].map(tagP) };
   T.mix = { id: "mix", name: "Late-2000s mixtape", scope: `Answers from the ${span} year-end charts`, blurb: `A bit of everything from ${span}.`, pool: ["L", "B", "P", "R", "C", "K", "W", "G", "D", "I", "S", "M", "F"].map(tagP) };
-  const art = {}; CATALOG.forEach(s => s.people.forEach(p => { const k = norm(p); art[k] = art[k] || { name: p, n: 0 }; art[k].n++; }));
-  T.names = { id: "names", name: "Big names", scope: `Answers from the ${span} year-end charts`, blurb: `The era’s biggest stars. Skip their obvious hit.`,
-    pool: Object.values(art).filter(a => a.n >= 4).sort((a, b) => b.n - a.n).map(a => ({ text: `Name a ${a.name} song.`, label: a.name, years: all, ok: s => s.people.some(p => norm(p) === norm(a.name)) })) };
-  const feat = {}; CATALOG.forEach(s => { if (!s.featured) return; s.people.slice(1).forEach(p => { const k = norm(p); feat[k] = feat[k] || { name: p, n: 0 }; feat[k].n++; }); });
-  T.feat = { id: "feat", name: "The featuring era", scope: `Answers from the ${span} year-end charts`, blurb: `When every hit had a guest verse.`,
-    pool: Object.values(feat).filter(f => f.n >= 3).sort((a, b) => b.n - a.n).map(f => ({ text: `Name a song featuring ${f.name}.`, label: `Feat. ${f.name}`, years: all, ok: s => s.featured && s.people.slice(1).some(p => norm(p) === norm(f.name)) })) };
-  const order = ["y2006", "love", "y2007", "party", "y2008", "names", "y2009", "bands", "y2010", "feat", "mix"];
+  T.her = { id: "her", name: "Her era", scope: `Answers from the ${span} year-end charts`, blurb: `Pop queens, country stars and girl groups, ${span}.`, pool: ["W", "LW", "BW", "PW", "SW", "CW", "FW"].map(tagP) };
+  T.feat = { id: "feat", name: "The featuring era", scope: `Answers from the ${span} year-end charts`, blurb: `When every hit had a guest verse, ${span}.`, pool: ["F", "PF", "RF", "LF", "R", "M", "LR"].map(tagP) };
+  const order = ["y2006", "love", "y2007", "party", "y2008", "her", "y2009", "bands", "y2010", "feat", "mix"];
   return order.map(k => T[k]).filter(t => t && t.pool.filter(p => CATALOG.filter(p.ok).length >= 4).length >= 7);
 }
 function themeForDay(n) {
@@ -326,9 +356,9 @@ function promptsFor(n) {
   const list = theme.fixedFirst ? [pool[0], ...shuffle(pool.slice(1), r)] : shuffle(pool, r);
   return { theme, prompts: list.slice(0, 7).map(p => ({ ...p, answers: CATALOG.filter(p.ok) })) };
 }
-const scoreFor = (song, prompt) => Math.max(...prompt.years.filter(y => song.ranks[y] != null).map(y => pointsFor(song.ranks[y])), 0);
-const bestRank = (song, prompt) => Math.min(...prompt.years.filter(y => song.ranks[y] != null).map(y => song.ranks[y]));
-const rankLine = (song, prompt) => { const ys = prompt.years.filter(y => song.ranks[y] != null); const y = ys.sort((a, b) => song.ranks[b] - song.ranks[a])[0]; return y ? `#${song.ranks[y]} of ${y}` : "Not on this chart"; };
+const scoreFor = (song, prompt) => prompt.answers.includes(song) ? song.pts : 0;
+const bestRank = (song) => song.obscure; // lower = better known
+const rankLine = (song) => chartRun(song) || "Not on these charts";
 
 /* ---------- shared stats (db, optional) ---------- */
 let db = null, me = null, PLAYS = [];
@@ -506,7 +536,7 @@ function viewReveal() {
   const base = a ? (a.ok ? scoreFor(song, p) : 0) : 0, lines = REACT[a?.ok ? base : 0], onChart = song && p.years.some(y => song.ranks[y] != null);
   const line = a?.dupe ? "You already used that one today." : !a ? "Out of time." : !a.ok ? (onChart ? "Right chart, wrong prompt." : "Not on that chart.") : lines[state.idx % 2];
   const st = dayStats(state.day), said = song ? (st.counts[state.idx].get(song.key) || 0) : 0, pct = st.players > 1 && song ? Math.round(said / st.players * 100) : null;
-  const tier = a?.ok ? tierFor(bestRank(song, p))[2] : "";
+  const tier = a?.ok ? tierOf(song.pts)[2] : "";
   return `<div class="view" style="max-width:640px;margin:0 auto;width:100%">${playHead()}
   <div class="verdict"><div class="rec shadow" style="--rs:160px;aspect-ratio:112/100">${recordSVG(pts, { arm: true })}</div>
     <div style="min-width:0"><div class="big num">+${a ? a.pts : 0}</div><div class="voice" style="font-size:24px;line-height:1.1">${esc(line)}</div>${tier ? `<span class="lab deep">${tier}${a.hint ? " · hint, half points" : ""}</span>` : ""}</div></div>
@@ -567,12 +597,25 @@ function savedList(saved) {
 }
 function viewSaved() { return `${deskbar("saved")}<div class="view"><div class="top"><h2 style="font-size:30px">Saved songs</h2><span class="lab">${savedSongs().length}</span></div>${savedList(savedSongs())}</div>${nav("saved").replace('class="tabbar"', 'class="tabbar mobilebar"')}`; }
 function sheetHTML() {
-  return `<div class="scrim" data-act="closesheet"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="howt">
-  <div class="grab"></div><div><h2 id="howt" style="font-size:28px">How it works</h2><p class="sub" style="margin:4px 0 0">Takes about 4 minutes a day.</p></div>
-  <div class="step"><div class="vis"><span style="background:var(--paper);border-radius:999px;padding:6px 10px">Supers<span style="color:var(--sig)">|</span></span></div><div><span class="lab deep" style="font-size:10px">01</span><h3>Name a song</h3><p class="sub" style="margin:2px 0 0">7 prompts, 25 seconds each. It has to have made that year’s top 100.</p></div></div>
-  <div class="step"><div class="vis"><span>#1 &nbsp;+10<br>#96 <span style="color:var(--deep)">+100</span></span></div><div><span class="lab deep" style="font-size:10px">02</span><h3>Dig deeper</h3><p class="sub" style="margin:2px 0 0">A #1 hit gets you 10 points. Something that scraped in at #96 gets you 100.</p></div></div>
-  <div class="step"><div class="vis"><span class="rec" style="--rs:60px;width:60px">${recordSVG([10, 30, 85, 60])}</span></div><div><span class="lab deep" style="font-size:10px">03</span><h3>Fill your record</h3><p class="sub" style="margin:2px 0 0">Every answer moves the needle in. Then hear the songs you missed.</p></div></div>
-  <button class="btn" data-act="closesheet" style="justify-content:center">Got it, let’s play</button></div></div>`;
+  const span = `${YEARS[0]}–${YEARS[YEARS.length - 1]}`;
+  const find = t => CATALOG.find(x => x.t === t);
+  const ex = [["Bleeding Love", 2008], ["Love Story", 2008], ["In Love with a Girl", 2008]].map(([t, y]) => ({ s: find(t), y })).filter(e => e.s);
+  const exRow = ({ s }) => `<div class="ex">${coverEl(s, 40, 6)}<span class="ex-t"><b>${esc(s.t)}</b><small>${esc(s.main)} · ${chartRun(s)}</small></span><span class="ex-p" style="background:var(${tierVar(s.pts)})">+${s.pts}</span></div>`;
+  const tiers = TIERS.map(t => [t[1], t[2]]);
+  return `<div class="scrim" data-act="closesheet"><div class="sheet how" role="dialog" aria-modal="true" aria-labelledby="howt">
+  <div class="grab"></div>
+  <header class="how-hd"><span class="lab">How to play</span><h2 id="howt">Name the hits of ${span}.</h2>
+    <p class="sub">Every answer has to be a song from a Billboard year-end Hot 100 in those five years. Older or newer hits don’t count, even by the same artist.</p></header>
+  <section class="card"><div class="card-hd"><span class="num">1</span><h3>Answer the prompt</h3><span class="lab">25 sec</span></div>
+    <div class="mock"><span class="mock-q">Name a love song from 2008.</span><span class="mock-in">In Love with a Gi<i></i></span></div>
+    <p class="sub">Type the title. Anything that doesn’t fit is ignored, so keep guessing until the clock runs out.</p></section>
+  <section class="card"><div class="card-hd"><span class="num">2</span><h3>Go deep for points</h3><span class="lab">7 prompts</span></div>
+    ${ex.map(exRow).join("")}
+    <div class="ladder">${tiers.map(([p, r]) => `<div><i style="height:${8 + p * .34}px;background:var(${tierVar(p)})"></i><b>${p}</b><small>${r}</small></div>`).join("")}</div>
+    <p class="sub">Songs are scored on how well-known they are today: how high and how long they charted, plus how much they still get played. A hint halves the points.</p></section>
+  <section class="card row"><span class="rec" style="--rs:96px;width:96px">${recordSVG([100, 85, 60, 30], { label: "" })}</span>
+    <div><div class="card-hd"><span class="num">3</span><h3>Fill your record</h3></div><p class="sub">Points fill it from the edge in. 700 fills it. Then hear the songs you missed.</p></div></section>
+  <button class="btn" data-act="closesheet" style="justify-content:center">Start today’s record</button></div></div>`;
 }
 
 /* ---------- render ---------- */
@@ -630,7 +673,7 @@ async function share() {
 
 /* ---------- boot ---------- */
 Promise.all([fetch("data/songs.json").then(r => r.json()), fetch("data/tags.json").then(r => r.json())]).then(([j, tg]) => {
-  TAGMAP = tg; buildCatalog(j); window.__needle = { promptsFor, themes: () => THEMES.map(t => t.name) }; state.view = "home"; state.sheet = !store.get("seenHow", false); render(); connectDb();
+  TAGMAP = tg; buildCatalog(j); window.__needle = { promptsFor, catalog: () => CATALOG, themes: () => THEMES.map(t => t.name) }; state.view = "home"; state.sheet = !store.get("seenHow", false); render(); connectDb();
 }).catch(() => { $("#app").innerHTML = `<div class="loading"><div class="wordmark">needle</div><p class="sub">The charts didn’t load. Refresh to try again.</p></div>`; });
 })();
 </script>
