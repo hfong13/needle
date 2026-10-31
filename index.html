@@ -371,7 +371,7 @@ function playSong(song, seconds = DATA?.clip || 10, keyOverride) {
   stopAudio();
   if (!song.clip) { toast("No preview for this one"); return; }
   const start = (song.clip.i % 50) * DATA.clip;
-  const src = `audio/${song.clip.y}-${Math.floor(song.clip.i / 50)}.mp4`;
+  const src = `audio/${song.clip.y}-${Math.floor(song.clip.i / 50)}.mp3`;
   if (!audio.src.endsWith(src)) audio.src = src;
   const go = () => { audio.currentTime = start; audio.play().then(() => { playingKey = k; stopAt = start + Math.min(seconds, DATA.clip) - 0.05; render(); }).catch(() => toast("Tap again to play")); };
   if (audio.readyState >= 1) go(); else { audio.addEventListener("loadedmetadata", go, { once: true }); audio.load(); }
