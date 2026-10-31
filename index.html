@@ -417,14 +417,16 @@ function submit(song) {
   state.view = "reveal"; render(); window.scrollTo(0, 0);
 }
 function next() { stopAudio(); if (state.run.done) { state.view = "results"; render(); window.scrollTo(0, 0); return; } state.idx++; startPrompt(); }
-function search(q) {
-  const n = norm(q); if (n.length < 2) return [];
-  const terms = n.split(" ");
-  return CATALOG.map(s => { const hay = s.nt + " " + s.na; if (!terms.every(t => hay.includes(t))) return null;
-    const score = (s.nt.startsWith(n) ? 0 : s.nt.includes(n) ? 1 : 2) + (Math.min(...Object.values(s.ranks)) / 1000); return [score, s]; })
-    .filter(Boolean).sort((a, b) => a[0] - b[0]).slice(0, 6).map(x => x[1]);
-}
-function useHint() {
+function lev(a, b) { if (Math.abs(a.length - b.length) > 2) return 9; const d = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) { let prev = d[0]; d[0] = i; for (let j = 1; j <= b.length; j++) { const t = d[j]; d[j] = Math.min(d[j] + 1, d[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = t; } } return d[b.length]; }
+// Players type a title from memory. Nothing is listed while typing, so the search can't be used to browse answers.
+function matchTitle(q) {
+  const n = norm(q).replace(/^the /, ""); if (n.length < 1) return [];
+  const forms = s => [s.nt, norm(s.t.replace(/\(.*?\)/g, ""))].map(f => f.replace(/^the /, ""));
+  const exact = CATALOG.filter(s => forms(s).includes(n)); if (exact.length) return exact;
+  const tol = n.length >= 10 ? 2 : n.length >= 5 ? 1 : 0; if (!tol) return [];
+  return CATALOG.filter(s => forms(s).some(f => lev(f, n) <= tol));
+}function useHint() {
   if (state.hintUsed) return; const { prompts } = promptsFor(state.day), p = prompts[state.idx];
   const used = state.run.answers.filter(Boolean).map(a => a.key);
   const opts = p.answers.filter(s => s.clip && !used.includes(s.key)).sort((a, b) => bestRank(b, p) - bestRank(a, p));
@@ -466,15 +468,13 @@ function playHead() {
 }
 function viewPrompt() {
   const { theme, prompts } = promptsFor(state.day), p = prompts[state.idx];
-  const sel = state.sugg[state.sel];
   return `<div class="view" style="max-width:640px;margin:0 auto;width:100%">${playHead()}
   <div class="timer"><div class="bar"><span style="transform:scaleX(${state.timeLeft / PROMPT_SECONDS})"></span></div><span class="t">0:${String(Math.ceil(state.timeLeft)).padStart(2, "0")}</span></div>
   <div class="q"><span class="lab">Prompt ${state.idx + 1} of 7 · ${esc(theme.name)}</span><h2>${esc(p.text)}</h2><span class="sub">${esc(theme.scope)}</span></div>
   <form class="inputrow" id="f" autocomplete="off"><label for="answer" class="vh">Song title or artist</label>
-    <input id="answer" type="text" placeholder="Search a song or artist" value="${esc(state.typed)}" enterkeyhint="go" spellcheck="false" autocapitalize="off">
-    <button class="go ${sel ? "ready" : ""}" type="submit" aria-label="Submit answer">${I.arrow}</button></form>
+    <input id="answer" type="text" placeholder="Type a song title" value="${esc(state.typed)}" enterkeyhint="go" spellcheck="false" autocapitalize="off">
+    <button class="go ${state.typed.trim().length > 1 ? "ready" : ""}" type="submit" aria-label="Submit answer">${I.arrow}</button></form>
   ${state.err ? `<p class="err" role="alert">${esc(state.err)}</p>` : ""}
-  <div id="sugg">${suggHTML()}</div>
   <div class="hint ${playingKey === "hint" ? "playing" : ""}"><button data-act="hint" ${state.hintUsed ? "disabled" : ""}>${wave()} ${state.hintUsed ? "Hint used" : "Blanking? Hear a 3-sec hint"}</button><span class="lab">½ points</span></div>
   </div>`;
 }
@@ -610,15 +610,17 @@ document.addEventListener("click", e => {
   }
 });
 document.addEventListener("input", e => {
-  if (e.target.id !== "answer") return; state.typed = e.target.value; state.sugg = search(state.typed); state.sel = 0;
+  if (e.target.id !== "answer") return; state.typed = e.target.value;
   if (state.err) { state.err = ""; $(".err")?.remove(); }
-  $("#sugg").innerHTML = suggHTML(); $(".go")?.classList.toggle("ready", !!state.sugg[0]);
+  $(".go")?.classList.toggle("ready", state.typed.trim().length > 1);
 });
-document.addEventListener("keydown", e => {
-  if (e.target.id !== "answer" || !state.sugg.length) return;
-  if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); state.sel = (state.sel + (e.key === "ArrowDown" ? 1 : -1) + state.sugg.length) % state.sugg.length; $("#sugg").innerHTML = suggHTML(); }
+document.addEventListener("submit", e => {
+  e.preventDefault(); if (e.target.id !== "f" || state.typed.trim().length < 1) return;
+  const { prompts } = promptsFor(state.day), p = prompts[state.idx], used = state.run.answers.filter(Boolean).map(a => a.key);
+  const cands = matchTitle(state.typed);
+  if (!cands.length) { state.err = `Couldn’t find “${state.typed.trim()}” on any year-end chart. Check the spelling.`; state.typed = ""; render(); const i = $("#answer"); if (i) { i.value = ""; i.focus(); } return; }
+  submit(cands.find(c => p.answers.includes(c) && !used.includes(c.key)) || cands[0]);
 });
-document.addEventListener("submit", e => { e.preventDefault(); if (e.target.id === "f") { const s = state.sugg[state.sel]; if (s) submit(s); else toast("Pick a song from the list"); } });
 async function share() {
   const r = state.run, n = state.day, { theme } = promptsFor(n);
   const text = `needle No. ${n} · ${theme.name}\n${r.answers.map(a => SHARE_GLYPH(a ? a.pts : 0)).join(" ")}  ${r.score}/700\n${verdictLine(r.score)}`;
