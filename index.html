@@ -342,14 +342,17 @@ function buildThemes() {
     { id: "feat", name: "Featuring", blurb: "Five hits with a guest artist.", pick: s => s.featured },
     { id: "one", name: "One-hit wonders", blurb: "Five artists who made the year-end chart just once.", pick: s => { const names = s.a.split(/\s+(?:featuring|feat\.?|ft\.?|with|and|&|x|vs\.?)\s+|,\s*/i).map(norm).filter(Boolean); return s.years.length === 1 && names.every(nm => APPEARS.get(nm) === 1); } },
     { id: "deep", name: "Deep cuts", blurb: "Five songs that only scraped in, somewhere between #70 and #100.", pick: s => s.best >= 70 },
+    { id: "num1", name: "Number ones", blurb: "Five songs that finished their year at #1 or #2.", pick: s => s.best <= 2 },
+    { id: "numbers", name: "Numbers in the title", blurb: "Five hits with a number in the name.", pick: s => /\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fifteen|sixteen|seventeen|nineteen|twenty|hundred|thousand|million|first|second|third)\b/i.test(s.t) },
+    { id: "colours", name: "Colours in the title", blurb: "Five hits with a colour in the name.", pick: s => /\b(red|blue|green|yellow|black|white|purple|pink|gold|golden|silver|grey|gray|orange|violet|brown|scarlet)\b/i.test(s.t) },
     { id: "mix", name: "Anything goes", blurb: `Five hits from anywhere between ${Y0} and ${Y1}.`, pick: () => true }
   ].map(c => ({ range: [Y0, Y1], ...c })).filter(c => CATALOG.filter(c.pick).length >= 25);
   return { decades, artists, cats };
 }
-// Day rotation: decade, artist, category, decade, artist, category...
+// Day rotation: a category day, then an artist day. Every day uses the full 1980–2024 dial.
 function themeForDay(n) {
-  const { decades, artists, cats } = THEMES, k = ((n % 3) + 3) % 3, i = Math.floor(n / 3);
-  return k === 0 ? decades[i % decades.length] : k === 1 ? artists[(i * 7) % artists.length] : cats[i % cats.length];
+  const { artists, cats } = THEMES, i = Math.floor(n / 2);
+  return n % 2 === 0 ? cats[i % cats.length] : artists[(i * 7) % artists.length];
 }
 // Five songs from the theme: mostly songs people know, spread across different years.
 function tracksFor(n) {
@@ -636,7 +639,7 @@ function sheetHTML() {
   return `<div class="scrim" data-act="closesheet"><div class="sheet how" role="dialog" aria-modal="true" aria-labelledby="howt">
   <div class="grab"></div>
   <header class="how-hd"><span class="lab">How to play</span><h2 id="howt">When was it a hit?</h2>
-    <p class="sub">Five songs a day from Billboard’s year-end Hot 100, ${Y0} to ${Y1}. Each day has a theme: a decade, an artist, or a kind of song.</p></header>
+    <p class="sub">Five songs a day from Billboard’s year-end Hot 100, ${Y0} to ${Y1}. Each day has a theme: an artist, or a kind of song.</p></header>
   <section class="card row"><div class="board mini">${dialSVG(demo, { guess: 1997 })}</div>
     <div><div class="card-hd"><span class="stepn">1</span><h3>Listen</h3></div><p class="sub">The song plays. Going round the record is the years, starting at the top.</p></div></section>
   <section class="card row"><div class="board mini">${dialSVG(demo, { guess: 1997, target: 1999 })}</div>
