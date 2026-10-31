@@ -3,6 +3,7 @@
 <title>needle</title><meta name="description" content="A daily music game: name songs from the 2006–2010 year-end Hot 100. The deeper the cut, the more it scores.">
 <meta property="og:title" content="needle"><meta property="og:description" content="How deep does your taste go? A daily music game.">
 <meta name="theme-color" content="#FBFAF7">
+<meta property="og:type" content="website"><meta property="og:url" content="https://hfong13.github.io/needle/"><meta property="og:image" content="https://hfong13.github.io/needle/og.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="needle: a daily music game. A vinyl record filled with orange bands."><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="needle"><meta name="twitter:description" content="How deep does your taste go? A daily music game."><meta name="twitter:image" content="https://hfong13.github.io/needle/og.jpg">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%230E0D0B'/%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%23F5521A' stroke-width='10'/%3E%3Ccircle cx='50' cy='50' r='16' fill='%23FBFAF7'/%3E%3C/svg%3E">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head><body>
@@ -623,7 +624,7 @@ document.addEventListener("submit", e => {
 });
 async function share() {
   const r = state.run, n = state.day, { theme } = promptsFor(n);
-  const text = `needle No. ${n} · ${theme.name}\n${r.answers.map(a => SHARE_GLYPH(a ? a.pts : 0)).join(" ")}  ${r.score}/700\n${verdictLine(r.score)}`;
+  const text = `needle No. ${n} · ${theme.name}\n${r.answers.map(a => SHARE_GLYPH(a ? a.pts : 0)).join(" ")}  ${r.score}/700\n${verdictLine(r.score)}\nhfong13.github.io/needle`;
   try { await navigator.clipboard.writeText(text); toast("Copied. Paste it in your group chat."); } catch { toast(text.split("\n")[1]); }
 }
 
