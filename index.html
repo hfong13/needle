@@ -107,6 +107,27 @@ h3{font-weight:500;font-size:17px;margin:0}
 .t1{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .t2{font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kbd{font-family:var(--ff-mono);font-size:10px;color:var(--mute);border:1px solid var(--hair);border-radius:6px;padding:2px 6px}
+.snip{display:flex;align-items:center;gap:14px;padding:6px 0}
+.bigplay{width:60px;height:60px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;flex:none}
+.snip.on .bigplay{background:var(--sig);color:#141310}
+.sline{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.sbar{position:relative;height:10px;border-radius:5px;background:var(--wash);overflow:hidden}
+.sbar .unl{position:absolute;inset:0 auto 0 0;background:var(--hair)}
+.sbar .ph{position:absolute;inset:0 auto 0 0;background:var(--sig);width:0;animation:ph var(--d) linear forwards}
+@keyframes ph{to{width:var(--w)}}
+.sbar i{position:absolute;top:0;bottom:0;width:2px;background:var(--paper);margin-left:-1px}
+.slabs{position:relative;height:14px}
+.slabs span{position:absolute;transform:translateX(-100%);font:10px var(--ff-mono);color:var(--mute);opacity:.5}
+.slabs span.u{opacity:1;color:var(--ink)}
+.clues{display:flex;gap:8px;flex-wrap:wrap}
+.clues>span{display:flex;align-items:center;gap:8px;background:var(--wash);border-radius:999px;padding:7px 12px;font-weight:500;font-size:14px}
+.clues .lab{font-size:9px}
+.tries{display:flex;flex-direction:column;gap:6px}
+.try{height:38px;border-radius:12px;border:1px solid var(--hair);display:flex;align-items:center;padding:0 12px;font-size:14px;color:var(--mute)}
+.try.now{border-color:var(--ink);color:var(--ink);border-style:dashed}
+.try.wrong{color:var(--deep);background:var(--wash);border-color:transparent}.try.wrong s{text-decoration-thickness:1px}
+.try.skip{background:var(--wash);border-color:transparent;font-family:var(--ff-mono);font-size:12px}
+.skipbtn{align-self:center;font-weight:500;font-size:14px;padding:10px 16px;border-radius:999px;border:1px solid var(--hair)}
 .hint{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .hint button{display:flex;align-items:center;gap:8px;font-weight:500;font-size:14px}
 .hint button[disabled]{opacity:.45}
@@ -117,7 +138,7 @@ h3{font-weight:500;font-size:17px;margin:0}
 @keyframes w{to{transform:scaleY(.35)}}
 @media (prefers-reduced-motion:reduce){.playing .wave i{animation:none}}
 /* cover */
-.cv{flex:none;border-radius:8px;background-color:var(--wash);background-repeat:no-repeat;position:relative;overflow:hidden}
+.cv{display:block;flex:none;border-radius:8px;background-color:var(--wash);background-repeat:no-repeat;position:relative;overflow:hidden}
 .cv.spin{border-radius:50%;animation:spin 6s linear infinite}
 .cv.spin::after{content:"";position:absolute;inset:38%;border-radius:50%;background:var(--paper);box-shadow:0 0 0 2px var(--sig)}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -167,7 +188,7 @@ h3{font-weight:500;font-size:17px;margin:0}
 .how .card.row{flex-direction:row;align-items:center;gap:16px}.how .card.row>div{display:flex;flex-direction:column;gap:6px}
 .how .card .sub{margin:0;font-size:14px;line-height:1.45}
 .card-hd{display:flex;align-items:center;gap:10px}.card-hd h3{margin:0;font-size:17px;flex:1}
-.num{width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font:500 11px var(--ff-mono);flex:none}
+.stepn{width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--on-ink);display:grid;place-items:center;font:500 11px var(--ff-mono);flex:none}
 .mock{background:var(--paper);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--hair)}
 .mock-q{font-size:16px;font-weight:600;letter-spacing:-.01em}
 .mock-in{font:14px var(--ff-mono);background:var(--wash);border-radius:999px;padding:8px 12px;display:flex;align-items:center}
@@ -334,20 +355,20 @@ function buildThemes() {
   for (const y of YEARS) {
     const P = [{ text: `Name a hit from ${y}.`, label: `Any ${y} hit`, years: [y], ok: s => inYear(s, y) }];
     for (const t of "LBPRWGFKCSDIM") P.push({ text: TAGS[t].yr(y), label: TAGS[t].label, years: [y], ok: s => inYear(s, y) && hasTags(s, t) });
-    T["y" + y] = { id: "y" + y, name: `${y} hits`, scope: `It has to be on the ${y} year-end Hot 100`, blurb: `Seven prompts, all songs from ${y}.`, fixedFirst: true, pool: P };
+    T["y" + y] = { id: "y" + y, name: `${y} hits`, scope: `It has to be on the ${y} year-end Hot 100`, blurb: `Seven songs from the ${y} year-end chart.`, pick: s => inYear(s, y), fixedFirst: true, pool: P };
   }
   const late = x => x.replace(/^Name an? /, "Name a late-2000s ");
   const tagP = t => t.length === 1 ? { text: late(TAGS[t].any), label: TAGS[t].label, years: all, ok: s => hasTags(s, t) } : { text: late(COMBO[t][0]), label: COMBO[t][1], years: all, ok: s => hasTags(s, t) };
   const yearP = (t, y) => ({ text: TAGS[t].yr(y), label: `${TAGS[t].label}, ${y}`, years: [y], ok: s => inYear(s, y) && hasTags(s, t) });
-  const cat = (id, name, blurb, tag, extra) => ({ id, name, blurb, scope: SCOPE, fixedFirst: true, pool: [tagP(tag), ...extra.map(tagP), ...YEARS.map(y => yearP(tag, y))] });
-  T.love = cat("love", "Love songs", "Seven prompts, all love songs.", "L", ["LC", "LG", "LR", "LK", "LW", "LF"]);
-  T.breakup = cat("breakup", "Breakup songs", "Seven prompts, all heartbreak.", "B", ["BW", "BK", "BR", "S", "SW"]);
-  T.party = cat("party", "Party songs", "Seven prompts for the dance floor.", "P", ["PW", "PF", "PG", "D", "M"]);
-  T.rap = cat("rap", "Late-2000s rap", "Seven prompts, all rap.", "R", ["RF", "LR", "BR", "M"]);
-  T.bands = cat("bands", "Bands & rock", "Seven prompts, all guitars and groups.", "K", ["G", "LK", "BK", "LG", "PG"]);
-  T.mix = { id: "mix", name: "Late-2000s hits", scope: SCOPE, blurb: "A bit of everything.", pool: ["L", "B", "P", "R", "C", "K", "W", "G", "D", "I", "S", "M", "F"].map(tagP) };
+  const cat = (id, name, blurb, tag, extra) => ({ id, name, blurb, scope: SCOPE, pick: s => hasTags(s, tag), fixedFirst: true, pool: [tagP(tag), ...extra.map(tagP), ...YEARS.map(y => yearP(tag, y))] });
+  T.love = cat("love", "Love songs", "Seven love songs from the late 2000s.", "L", ["LC", "LG", "LR", "LK", "LW", "LF"]);
+  T.breakup = cat("breakup", "Breakup songs", "Seven breakup songs from the late 2000s.", "B", ["BW", "BK", "BR", "S", "SW"]);
+  T.party = cat("party", "Party songs", "Seven party songs from the late 2000s.", "P", ["PW", "PF", "PG", "D", "M"]);
+  T.rap = cat("rap", "Late-2000s rap", "Seven rap songs from the late 2000s.", "R", ["RF", "LR", "BR", "M"]);
+  T.bands = cat("bands", "Bands & rock", "Seven songs from late-2000s bands and rock acts.", "K", ["G", "LK", "BK", "LG", "PG"]);
+  T.mix = { id: "mix", name: "Late-2000s hits", scope: SCOPE, blurb: "Seven songs from anywhere in the late 2000s.", pick: () => true, pool: ["L", "B", "P", "R", "C", "K", "W", "G", "D", "I", "S", "M", "F"].map(tagP) };
   const order = ["y2006", "love", "y2007", "party", "y2008", "breakup", "y2009", "rap", "y2010", "bands", "mix"];
-  return order.map(k => T[k]).filter(t => t && t.pool.filter(p => CATALOG.filter(p.ok).length >= 4).length >= 7);
+  return order.map(k => T[k]).filter(t => t && CATALOG.filter(s => s.clip && t.pick(s)).length >= 30);
 }
 function themeForDay(n) {
   const i08 = Math.max(0, THEMES.findIndex(t => t.id === "y2008"));
@@ -358,6 +379,18 @@ function promptsFor(n) {
   const pool = theme.pool.filter(p => CATALOG.filter(p.ok).length >= 4);
   const list = theme.fixedFirst ? [pool[0], ...shuffle(pool.slice(1), r)] : shuffle(pool, r);
   return { theme, prompts: list.slice(0, 7).map(p => ({ ...p, answers: CATALOG.filter(p.ok) })) };
+}
+// Each day: seven songs from the theme, getting less famous as you go.
+const STAGES = [1, 2, 4, 8, 12], STAGE_PTS = [100, 80, 60, 40, 20], RAMP = [.04, .16, .3, .45, .6, .74, .88];
+function tracksFor(n) {
+  const theme = themeForDay(n), r = rng(n * 7919 + 13);
+  const pool = shuffle(CATALOG.filter(s => s.clip && theme.pick(s)), r).sort((a, b) => a.obscure - b.obscure);
+  const picked = [];
+  RAMP.forEach(q => {
+    const at = Math.max(0, Math.min(pool.length - 1, Math.round((q + (r() - .5) * .1) * (pool.length - 1))));
+    for (let d = 0; d < pool.length; d++) for (const j of [at + d, at - d]) { const s = pool[j]; if (s && !picked.some(x => x.nt === s.nt)) { picked.push(s); return; } }
+  });
+  return { theme, tracks: picked };
 }
 const scoreFor = (song, prompt) => prompt.answers.includes(song) ? song.pts : 0;
 const bestRank = (song) => song.obscure; // lower = better known
@@ -391,8 +424,8 @@ function dayStats(n) {
 /* ---------- state ---------- */
 const today = dayNumber();
 const state = { view: "home", day: today, idx: 0, run: null, sheet: false, tab: "records", sugg: [], sel: 0, typed: "", timeLeft: PROMPT_SECONDS, hintUsed: false };
-const runs = () => store.get("runs2", {});
-const saveRun = (n, rec) => { const all = runs(); all[n] = rec; store.set("runs2", all); };
+const runs = () => store.get("runs3", {});
+const saveRun = (n, rec) => { const all = runs(); all[n] = rec; store.set("runs3", all); };
 const savedSongs = () => store.get("saved", []);
 function toggleSave(key) { const s = savedSongs(); const i = s.indexOf(key); if (i >= 0) s.splice(i, 1); else s.unshift(key); store.set("saved", s); toast(i >= 0 ? "Removed from Saved" : "Saved"); render(); }
 function streak() { const r = runs(); let n = today; if (!r[n]?.done) n--; let c = 0; while (r[n]?.done) { c++; n--; } return c; }
@@ -407,10 +440,12 @@ function playSong(song, seconds = DATA?.clip || 10, keyOverride) {
   const start = (song.clip.i % 50) * DATA.clip;
   const src = `audio/${song.clip.y}-${Math.floor(song.clip.i / 50)}.mp3`;
   if (!audio.src.endsWith(src)) audio.src = src;
-  const go = () => { audio.currentTime = start; audio.play().then(() => { playingKey = k; stopAt = start + Math.min(seconds, DATA.clip) - 0.05; render(); }).catch(() => toast("Tap again to play")); };
+  const len = Math.min(seconds, DATA.clip);
+  const go = () => { audio.currentTime = start; audio.play().then(() => { playingKey = k; stopAt = start + len + 0.3; clearTimeout(playTimer); playTimer = setTimeout(stopAudio, len * 1000); render(); }).catch(() => toast("Tap again to play")); };
   if (audio.readyState >= 1) go(); else { audio.addEventListener("loadedmetadata", go, { once: true }); audio.load(); }
 }
-function stopAudio() { audio.pause(); if (playingKey) { playingKey = null; render(); } }
+function stopAudio() { clearTimeout(playTimer); audio.pause(); if (playingKey) { playingKey = null; render(); } }
+function primeAudio(song) { if (!song?.clip) return; const src = `audio/${song.clip.y}-${Math.floor(song.clip.i / 50)}.mp3`; if (!audio.src.endsWith(src)) { audio.preload = "auto"; audio.src = src; audio.load(); } }
 audio.addEventListener("timeupdate", () => { if (playingKey && audio.currentTime >= stopAt) stopAudio(); });
 audio.addEventListener("ended", stopAudio);
 
@@ -422,35 +457,31 @@ function toast(msg) { let t = $(".toast"); if (!t) { t = document.createElement(
 let tick = null;
 function startDay(n) {
   state.day = n; const r = runs()[n];
-  state.run = r && !r.done ? r : { answers: [], score: 0, done: false, hints: [] };
   if (r?.done) { state.run = r; state.view = "results"; render(); return; }
-  state.idx = state.run.answers.length; startPrompt();
+  state.run = r || { answers: [], score: 0, done: false };
+  state.idx = state.run.answers.length; startTrack();
 }
-function startPrompt() {
-  stopAudio(); state.view = "prompt"; state.typed = ""; state.err = ""; state.sugg = []; state.sel = 0; state.hintUsed = false; state.timeLeft = PROMPT_SECONDS;
-  render(); $("#answer")?.focus();
-  clearInterval(tick); const t0 = Date.now();
-  tick = setInterval(() => { state.timeLeft = Math.max(0, PROMPT_SECONDS - (Date.now() - t0) / 1000); updateTimer(); if (state.timeLeft <= 0) { clearInterval(tick); submit(null); } }, 250);
+const curTrack = () => tracksFor(state.day).tracks[state.idx];
+function startTrack() {
+  stopAudio(); state.view = "prompt"; state.typed = ""; state.err = ""; state.stage = 0; state.guesses = [];
+  primeAudio(curTrack()); render(); window.scrollTo(0, 0);
 }
-function updateTimer() { const t = $(".timer"); if (!t) return; t.classList.toggle("low", state.timeLeft <= 5); $(".timer .bar span").style.transform = `scaleX(${state.timeLeft / PROMPT_SECONDS})`; $(".timer .t").textContent = "0:" + String(Math.ceil(state.timeLeft)).padStart(2, "0"); }
-function submit(song) {
-  const { prompts } = promptsFor(state.day), p = prompts[state.idx];
-  const used = state.run.answers.filter(Boolean).map(a => a.key);
-  if (song && (!p.answers.includes(song) || used.includes(song.key))) {
-    const onChart = p.years.some(y => song.ranks[y] != null), where = p.years.length === 1 ? `the ${p.years[0]} chart` : `the ${YEARS[0]}–${YEARS[YEARS.length - 1]} charts`;
-    state.err = used.includes(song.key) ? `You already used “${song.t}” today. Try another.` : onChart ? `“${song.t}” doesn’t fit this prompt. Try another.` : `“${song.t}” isn’t on ${where}. Try another.`;
-    state.typed = ""; state.sugg = []; state.sel = 0; render(); const i = $("#answer"); if (i) { i.value = ""; i.focus(); } return;
-  }
-  clearInterval(tick); stopAudio(); state.err = "";
-  let pts = 0, ok = false;
-  if (song && p.answers.includes(song) && !used.includes(song.key)) { ok = true; pts = scoreFor(song, p); if (state.hintUsed) pts = Math.round(pts / 2); }
-  state.run.answers[state.idx] = song ? { key: song.key, pts, ok, hint: state.hintUsed, dupe: used.includes(song.key) } : null;
+function playSnippet() { if (playingKey === "snip") { stopAudio(); return; } playSong(curTrack(), STAGES[state.stage], "snip"); }
+function advance(kind, title) {
+  state.guesses.push({ kind, t: title }); state.err = "";
+  if (state.stage >= STAGES.length - 1) { finishTrack(false); return; }
+  state.stage++; render(); playSnippet(); $("#answer")?.focus();
+}
+function finishTrack(ok) {
+  const s = curTrack(); stopAudio();
+  state.run.answers[state.idx] = { key: s.key, ok, stage: state.stage, pts: ok ? STAGE_PTS[state.stage] : 0 };
   state.run.score = state.run.answers.reduce((a, x) => a + (x ? x.pts : 0), 0);
   if (state.idx === 6) state.run.done = true;
   saveRun(state.day, state.run); pushPlay(state.day, state.run);
   state.view = "reveal"; render(); window.scrollTo(0, 0);
+  if (s.clip) playSong(s, DATA.clip);
 }
-function next() { stopAudio(); if (state.run.done) { state.view = "results"; render(); window.scrollTo(0, 0); return; } state.idx++; startPrompt(); }
+function next() { stopAudio(); if (state.run.done) { state.view = "results"; render(); window.scrollTo(0, 0); return; } state.idx++; startTrack(); }
 function lev(a, b) { if (Math.abs(a.length - b.length) > 2) return 9; const d = Array.from({ length: b.length + 1 }, (_, j) => j);
   for (let i = 1; i <= a.length; i++) { let prev = d[0]; d[0] = i; for (let j = 1; j <= b.length; j++) { const t = d[j]; d[j] = Math.min(d[j] + 1, d[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = t; } } return d[b.length]; }
 // Players type a title from memory. Nothing is listed while typing, so the search can't be used to browse answers.
@@ -460,13 +491,6 @@ function matchTitle(q) {
   const exact = CATALOG.filter(s => forms(s).includes(n)); if (exact.length) return exact;
   const tol = n.length >= 10 ? 2 : n.length >= 5 ? 1 : 0; if (!tol) return [];
   return CATALOG.filter(s => forms(s).some(f => lev(f, n) <= tol));
-}function useHint() {
-  if (state.hintUsed) return; const { prompts } = promptsFor(state.day), p = prompts[state.idx];
-  const used = state.run.answers.filter(Boolean).map(a => a.key);
-  const opts = p.answers.filter(s => s.clip && !used.includes(s.key)).sort((a, b) => bestRank(b, p) - bestRank(a, p));
-  if (!opts.length) { toast("No hint available"); return; }
-  state.hintUsed = true; const pick = opts[Math.floor(rng(state.day * 31 + state.idx)() * Math.min(5, opts.length))];
-  playSong(pick, HINT_SECONDS, "hint"); toast("Hint playing. This prompt is worth half points.");
 }
 
 /* ---------- views ---------- */
@@ -477,9 +501,9 @@ function nav(active) {
 function deskbar(active) { return `<div class="deskbar"><div class="wordmark">needle</div>${nav(active).replace('class="tabbar"', 'class="tabbar desk"')}</div>`; }
 
 function viewHome() {
-  const n = state.day = today, { theme } = promptsFor(n), r = runs()[n], y = runs()[n - 1];
+  const n = state.day = today, { theme } = tracksFor(n), r = runs()[n], y = runs()[n - 1];
   const pts = r ? r.answers.map(a => a ? a.pts : 0) : [];
-  const label = r?.done ? "See your record" : r?.answers?.length ? `Keep going · prompt ${r.answers.length + 1} of 7` : "Start today’s record";
+  const label = r?.done ? "See your record" : r?.answers?.length ? `Keep going · song ${r.answers.length + 1} of 7` : "Start today’s record";
   const st = streak();
   return `${deskbar("home")}<div class="view">
   <div class="top mobilebar"><div class="wordmark">needle</div><span class="pill"><span class="dot"></span>${st}-day streak</span></div>
@@ -488,7 +512,7 @@ function viewHome() {
       <div style="display:flex;flex-direction:column;gap:6px"><span class="lab">No. ${n} · ${esc(fmtDate(dateOf(n)))}</span><h1>${esc(theme.name)}</h1><p class="sub" style="margin:0;max-width:44ch">${esc(theme.blurb)}</p></div>
       <div class="center mobile-only" style="padding:6px 0">${recordEl(pts, { arm: true, armRest: !pts.length, shadow: true, size: 240, label: "No. " + n })}</div>
       <button class="btn" data-act="start">${label}${I.arrow}</button>
-      <span class="lab" style="text-align:center">7 prompts · 25 sec each · about 4 min</span>
+      <span class="lab" style="text-align:center">7 songs · from 1 second · about 3 min</span>
       ${y?.done ? `<button class="yesterday" data-act="day" data-day="${n - 1}"><span class="rec" style="--rs:44px;width:44px;margin:0">${recordSVG(y.answers.map(a => a ? a.pts : 0))}</span><span class="grow"><span class="lab">Yesterday · ${esc(themeForDay(n - 1).name)}</span><span style="display:block;font-weight:500">${y.score} pts</span></span>${I.chev}</button>` : ""}
     </div>
     <div class="center desk-only">${recordEl(pts, { arm: true, armRest: !pts.length, shadow: true, size: 440, label: "No. " + n })}</div>
@@ -497,63 +521,60 @@ function viewHome() {
 function playHead() {
   const pts = state.run.answers.map(a => a ? a.pts : 0);
   return `<div class="playhead"><button class="iconbtn" data-act="quit" aria-label="Leave and save progress">${I.close}</button>
-  <div class="steps" aria-label="Prompt ${state.idx + 1} of 7">${Array.from({ length: 7 }, (_, i) => `<i class="${i < state.run.answers.length && !(state.view === "prompt" && i === state.idx) ? "done" : ""} ${i === state.idx ? "now" : ""}"></i>`).join("")}</div>
+  <div class="steps" aria-label="Song ${state.idx + 1} of 7">${Array.from({ length: 7 }, (_, i) => `<i class="${i < state.run.answers.length && !(state.view === "prompt" && i === state.idx) ? "done" : ""} ${i === state.idx ? "now" : ""}"></i>`).join("")}</div>
   <div class="score-mini"><span class="rec" style="--rs:24px;width:24px;margin:0">${recordSVG(pts)}</span><span class="num">${state.run.score}</span></div></div>`;
 }
 function viewPrompt() {
-  const { theme, prompts } = promptsFor(state.day), p = prompts[state.idx];
+  const { theme } = tracksFor(state.day), s = curTrack(), st = state.stage, sec = STAGES[st], on = playingKey === "snip";
+  const clues = [];
+  if (st >= 2) clues.push(["Charted", Object.keys(s.ranks).sort().join(" & ")]);
+  if (st >= 3) clues.push(["Artist", st >= 4 ? s.main : s.main.split(/\s+/).map(w => w[0] + ".").join(" ")]);
   return `<div class="view" style="max-width:640px;margin:0 auto;width:100%">${playHead()}
-  <div class="timer"><div class="bar"><span style="transform:scaleX(${state.timeLeft / PROMPT_SECONDS})"></span></div><span class="t">0:${String(Math.ceil(state.timeLeft)).padStart(2, "0")}</span></div>
-  <div class="q"><span class="lab">Prompt ${state.idx + 1} of 7 · ${esc(theme.name)}</span><h2>${esc(p.text)}</h2><span class="sub">${esc(theme.scope)}</span></div>
-  <form class="inputrow" id="f" autocomplete="off"><label for="answer" class="vh">Song title or artist</label>
-    <input id="answer" type="text" placeholder="Type a song title" value="${esc(state.typed)}" enterkeyhint="go" spellcheck="false" autocapitalize="off">
-    <button class="go ${state.typed.trim().length > 1 ? "ready" : ""}" type="submit" aria-label="Submit answer">${I.arrow}</button></form>
+  <div class="q"><span class="lab">Song ${state.idx + 1} of 7 · ${esc(theme.name)}</span><h2>Name this song.</h2><span class="sub">Worth ${STAGE_PTS[st]} points right now.</span></div>
+  <div class="snip ${on ? "on" : ""}">
+    <button class="bigplay" data-act="snip" aria-label="${on ? "Stop" : `Play ${sec} second${sec > 1 ? "s" : ""}`}">${on ? I.pause : I.play}</button>
+    <div class="sline"><div class="sbar"><div class="unl" style="width:${sec / 12 * 100}%"></div>${on ? `<div class="ph" style="--d:${sec}s;--w:${sec / 12 * 100}%"></div>` : ""}${STAGES.slice(0, -1).map(x => `<i style="left:${x / 12 * 100}%"></i>`).join("")}</div>
+    <div class="slabs">${STAGES.map((x, i) => `<span class="${i <= st ? "u" : ""}" style="left:${x / 12 * 100}%">${x}s</span>`).join("")}</div></div>
+  </div>
+  ${clues.length ? `<div class="clues">${clues.map(([k, v]) => `<span><span class="lab">${k}</span>${esc(v)}</span>`).join("")}</div>` : ""}
+  <form class="inputrow" id="f" autocomplete="off"><label for="answer" class="vh">Song title</label>
+    <input id="answer" type="text" placeholder="Type the song title" value="${esc(state.typed)}" enterkeyhint="go" spellcheck="false" autocapitalize="off">
+    <button class="go ${state.typed.trim().length > 1 ? "ready" : ""}" type="submit" aria-label="Submit guess">${I.arrow}</button></form>
   ${state.err ? `<p class="err" role="alert">${esc(state.err)}</p>` : ""}
-  <div class="hint ${playingKey === "hint" ? "playing" : ""}"><button data-act="hint" ${state.hintUsed ? "disabled" : ""}>${wave()} ${state.hintUsed ? "Hint used" : "Blanking? Hear a 3-sec hint"}</button><span class="lab">½ points</span></div>
+  <div class="tries">${STAGES.map((_, i) => { const g = state.guesses[i]; return `<div class="try ${g ? g.kind : i === st ? "now" : ""}">${g ? (g.kind === "skip" ? "Skipped" : `<s>${esc(g.t)}</s>`) : i === st ? "Your guess" : ""}</div>`; }).join("")}</div>
+  <button class="skipbtn" data-act="skip">${st >= STAGES.length - 1 ? "Give up" : `Skip and hear ${STAGES[st + 1]}s`}</button>
   </div>`;
 }
-function suggHTML() {
-  if (!state.sugg.length) return state.typed.length >= 2 ? `<p class="sub" style="margin:0">No songs match “${esc(state.typed)}”. Try the artist’s name.</p>` : "";
-  return `<div class="sugg" role="listbox" aria-label="Matching songs">${state.sugg.map((s, i) => `<button role="option" aria-selected="${i === state.sel}" class="${i === state.sel ? "on" : ""}" data-pick="${i}">${coverEl(s, 36, 7)}<span class="meta"><span class="t1" style="display:block">${esc(s.t)}</span><span class="t2" style="display:block">${esc(s.a)}</span></span>${i === state.sel ? '<span class="kbd">return</span>' : ""}</button>`).join("")}</div>`;
-}
-function songRow(s, p, role, roleDeep) {
-  const pts = scoreFor(s, p), saved = savedSongs().includes(s.key), on = playingKey === s.key;
-  return `<div class="lrow"><span class="tier" style="background:var(${tierVar(pts)})"></span><span class="cv-wrap">${coverEl(s, 44).replace('class="cv"', `class="cv ${on ? "spin" : ""}"`)}</span>
-  <span class="grow">${role ? `<span class="lab ${roleDeep ? "deep" : ""}" style="font-size:10px;display:block">${role}</span>` : ""}<span class="t1" style="display:block">${esc(s.t)}</span><span class="t2" style="display:block">${esc(s.a)} · ${rankLine(s, p)}</span></span>
+function songRow(s, role, roleDeep) {
+  const saved = savedSongs().includes(s.key), on = playingKey === s.key;
+  return `<div class="lrow"><span class="tier" style="background:var(${tierVar(s.pts)})"></span><span class="cv-wrap">${coverEl(s, 44).replace('class="cv"', `class="cv ${on ? "spin" : ""}"`)}</span>
+  <span class="grow">${role ? `<span class="lab ${roleDeep ? "deep" : ""}" style="font-size:10px;display:block">${role}</span>` : ""}<span class="t1" style="display:block">${esc(s.t)}</span><span class="t2" style="display:block">${esc(s.a)} · ${rankLine(s)}</span></span>
   <button class="playbtn o" data-play="${esc(s.key)}" aria-label="${on ? "Stop" : "Play"} ${esc(s.t)}">${on ? I.pause : I.play}</button>
   <button class="iconbtn ${saved ? "on" : ""}" data-save="${esc(s.key)}" aria-label="${saved ? "Remove" : "Save"} ${esc(s.t)}">${saved ? I.check : I.plus}</button></div>`;
 }
-function otherAnswers(p, mine, idx) {
-  const st = dayStats(state.day), c = st.counts[idx], said = k => c.get(k) || 0, others = st.players > (mine ? 1 : 0);
-  const pool = p.answers.filter(s => s.key !== mine), byRank = pool.slice().sort((a, b) => bestRank(a, p) - bestRank(b, p));
-  if (!byRank.length) return [];
-  let most = byRank[0];
-  if (others) { const top = pool.slice().sort((a, b) => said(b.key) - said(a.key))[0]; if (top && said(top.key) > 0) most = top; }
-  const nobody = byRank.slice().reverse().find(s => !said(s.key) && s !== most) || byRank[byRank.length - 1];
-  const mid = byRank[Math.floor(byRank.length / 2)] !== most && byRank[Math.floor(byRank.length / 2)] !== nobody ? byRank[Math.floor(byRank.length / 2)] : byRank.find(s => s !== most && s !== nobody);
-  return [[others && said(most.key) ? "Most said" : "The obvious one", most, false], [mid && "In between", mid, false], [others ? "Nobody said" : "The deepest cut", nobody, true]].filter(x => x[1]);
+function neighbours(s) {
+  const y = Object.keys(s.ranks).sort((a, b) => s.ranks[a] - s.ranks[b])[0], r = s.ranks[y];
+  return { y, list: CATALOG.filter(x => x !== s && x.clip && x.ranks[y] != null).sort((a, b) => Math.abs(a.ranks[y] - r) - Math.abs(b.ranks[y] - r)).slice(0, 2) };
 }
+const LINES = ["One second. Unreal.", "Two seconds. Sharp.", "Got there.", "Took a minute.", "Just made it."];
 function viewReveal() {
-  const { prompts } = promptsFor(state.day), p = prompts[state.idx], a = state.run.answers[state.idx];
-  const song = a && BYKEY.get(a.key), pts = state.run.answers.map(x => x ? x.pts : 0);
-  const base = a ? (a.ok ? scoreFor(song, p) : 0) : 0, lines = REACT[a?.ok ? base : 0], onChart = song && p.years.some(y => song.ranks[y] != null);
-  const line = a?.dupe ? "You already used that one today." : !a ? "Out of time." : !a.ok ? (onChart ? "Right chart, wrong prompt." : "Not on that chart.") : lines[state.idx % 2];
-  const st = dayStats(state.day), said = song ? (st.counts[state.idx].get(song.key) || 0) : 0, pct = st.players > 1 && song ? Math.round(said / st.players * 100) : null;
-  const tier = a?.ok ? tierOf(song.pts)[2] : "";
+  const a = state.run.answers[state.idx], s = BYKEY.get(a.key), pts = state.run.answers.map(x => x ? x.pts : 0), on = playingKey === s.key, saved = savedSongs().includes(s.key);
+  const nb = neighbours(s);
   return `<div class="view" style="max-width:640px;margin:0 auto;width:100%">${playHead()}
   <div class="verdict"><div class="rec shadow" style="--rs:160px;aspect-ratio:112/100">${recordSVG(pts, { arm: true })}</div>
-    <div style="min-width:0"><div class="big num">+${a ? a.pts : 0}</div><div class="voice" style="font-size:24px;line-height:1.1">${esc(line)}</div>${tier ? `<span class="lab deep">${tier}${a.hint ? " · hint, half points" : ""}</span>` : ""}</div></div>
-  ${song ? `<div class="youcard">${coverEl(song, 64, 12).replace('class="cv"', `class="cv ${playingKey === song.key ? "spin" : ""}"`)}<div class="grow"><span class="lab" style="font-size:10px">Your answer</span><div class="t1" style="font-size:17px">${esc(song.t)}</div><div class="t2">${esc(song.a)}</div>
-    <div class="mono" style="font-size:12px;color:${a.ok ? "var(--deep)" : "var(--mute)"}">${a.ok ? rankLine(song, p) + (pct != null ? ` · ${pct}% said it` : "") : a.dupe ? "Already used today" : "Doesn’t fit this prompt"}</div></div>
-    <button class="playbtn" data-play="${esc(song.key)}" aria-label="Play ${esc(song.t)}">${playingKey === song.key ? I.pause : I.play}</button></div>` : ""}
-  <div style="display:flex;justify-content:space-between"><span class="lab" style="color:var(--ink)">Other answers</span><span class="lab">Tap to play</span></div>
-  <div class="list">${otherAnswers(p, song?.key, state.idx).map(([r, s, d]) => songRow(s, p, r, d)).join("")}</div>
-  <div class="sticky"><button class="btn" data-act="next">${state.run.done ? "See your record" : "Next prompt"}<span style="display:flex;align-items:center;gap:8px"><span class="lab" style="color:inherit;opacity:.6">${state.run.done ? "" : `${state.idx + 2} of 7`}</span>${I.arrow}</span></button></div>
+    <div style="min-width:0"><div class="big num">+${a.pts}</div><div class="voice" style="font-size:24px;line-height:1.1">${a.ok ? LINES[a.stage] : "This one got away."}</div><span class="lab ${a.ok ? "deep" : ""}">${a.ok ? `Named in ${STAGES[a.stage]}s` : "Missed"}</span></div></div>
+  <div class="youcard">${coverEl(s, 64, 12).replace('class="cv"', `class="cv ${on ? "spin" : ""}"`)}<div class="grow"><span class="lab" style="font-size:10px">${a.ok ? "You named it" : "It was"}</span><div class="t1" style="font-size:17px">${esc(s.t)}</div><div class="t2">${esc(s.a)}</div>
+    <div class="mono" style="font-size:12px;color:var(--deep)">${chartRun(s)} · ${tierOf(s.pts)[2]}</div></div>
+    <button class="playbtn" data-play="${esc(s.key)}" aria-label="${on ? "Stop" : "Play"} ${esc(s.t)}">${on ? I.pause : I.play}</button>
+    <button class="iconbtn ${saved ? "on" : ""}" data-save="${esc(s.key)}" aria-label="${saved ? "Remove" : "Save"} ${esc(s.t)}">${saved ? I.check : I.plus}</button></div>
+  ${nb.list.length ? `<div style="display:flex;justify-content:space-between"><span class="lab" style="color:var(--ink)">Next to it on the ${nb.y} chart</span><span class="lab">Tap to play</span></div>
+  <div class="list">${nb.list.map(x => songRow(x, "", false)).join("")}</div>` : ""}
+  <div class="sticky"><button class="btn" data-act="next">${state.run.done ? "See your record" : "Next song"}<span style="display:flex;align-items:center;gap:8px"><span class="lab" style="color:inherit;opacity:.6">${state.run.done ? "" : `${state.idx + 2} of 7`}</span>${I.arrow}</span></button></div>
   </div>`;
 }
 function verdictLine(score) { return score >= 600 ? "Played to the label." : score >= 450 ? "Deep in the grooves." : score >= 300 ? "Halfway to the label." : score >= 150 ? "Just past the edge." : "Barely scratched it."; }
 function viewResults() {
-  const n = state.day, { theme, prompts } = promptsFor(n), r = state.run, pts = r.answers.map(a => a ? a.pts : 0);
+  const n = state.day, { theme, tracks } = tracksFor(n), r = state.run, pts = r.answers.map(a => a ? a.pts : 0);
   const st = dayStats(n), scores = st.scores, better = scores.filter(s => s < r.score).length, top = scores.length > 1 ? Math.max(1, Math.round((1 - better / scores.length) * 100)) : null;
   const bins = Array(24).fill(0); scores.forEach(s => bins[Math.min(23, Math.floor(s / 700 * 24))]++); const mx = Math.max(1, ...bins), mine = Math.min(23, Math.floor(r.score / 700 * 24));
   const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
@@ -570,10 +591,9 @@ function viewResults() {
       <div style="display:flex;justify-content:space-between" class="lab"><span>0</span><span>Average ${avg}</span><span>700</span></div>`
       : `<span class="lab">You vs everyone</span><p class="sub" style="margin:0">${db ? "You’re the first to finish today’s record. The spread fills in as others play." : "Scores from other players show up when you open needle signed in to Claude."}</p>`}
     </div>
-    <div style="display:flex;justify-content:space-between"><span class="lab" style="color:var(--ink)">Your seven</span><span class="lab">Rank · points</span></div>
-    <div class="list">${prompts.map((p, i) => { const a = r.answers[i], s = a && BYKEY.get(a.key);
-      return s ? songRow(s, p, p.label, false).replace(/<button class="playbtn o"/, `<span class="mono num" style="font-size:13px;color:${a.pts >= 85 ? "var(--deep)" : "var(--ink)"}">+${a.pts}</span><button class="playbtn o"`)
-               : `<div class="lrow"><span class="tier" style="background:var(--hair)"></span><span class="grow"><span class="lab" style="font-size:10px;display:block">${esc(p.label)}</span><span class="t2">No answer</span></span><span class="mono" style="font-size:13px">+0</span></div>`; }).join("")}</div>
+    <div style="display:flex;justify-content:space-between"><span class="lab" style="color:var(--ink)">Your seven</span><span class="lab">Points</span></div>
+    <div class="list">${tracks.map((s, i) => { const a = r.answers[i]; if (!a) return "";
+      return songRow(s, a.ok ? `Song ${i + 1} · named in ${STAGES[a.stage]}s` : `Song ${i + 1} · missed`, a.ok && a.stage < 2).replace(/<button class="playbtn o"/, `<span class="mono num" style="font-size:13px;color:${a.pts >= 80 ? "var(--deep)" : "var(--ink)"}">+${a.pts}</span><button class="playbtn o"`); }).join("")}</div>
     ${n === today ? `<div class="teaser"><div><span class="lab">Tomorrow</span><div style="font-weight:500">${esc(nextTheme.name)}</div></div><span class="mono num" id="countdown"></span></div>` : ""}
   </div><div class="center desk-only">${recordEl(pts, { arm: true, shadow: true, size: 420, label: "No. " + n })}</div></div>
   </div>${nav("home").replace('class="tabbar"', 'class="tabbar mobilebar"')}`;
@@ -594,30 +614,27 @@ function viewRecords() {
   ${body}</div>${nav("records").replace('class="tabbar"', 'class="tabbar mobilebar"')}`;
 }
 function savedList(saved) {
-  if (!saved.length) return `<p class="sub">Nothing saved yet. Tap + next to any song on a reveal to keep it here.</p>`;
-  const fake = { years: YEARS };
-  return `<div class="list">${saved.map(k => BYKEY.get(k)).filter(Boolean).map(s => songRow(s, fake, "", false)).join("")}</div>`;
+  if (!saved.length) return `<p class="sub">Nothing saved yet. Tap + next to any song after you hear it to keep it here.</p>`;
+  return `<div class="list">${saved.map(k => BYKEY.get(k)).filter(Boolean).map(s => songRow(s, "", false)).join("")}</div>`;
 }
 function viewSaved() { return `${deskbar("saved")}<div class="view"><div class="top"><h2 style="font-size:30px">Saved songs</h2><span class="lab">${savedSongs().length}</span></div>${savedList(savedSongs())}</div>${nav("saved").replace('class="tabbar"', 'class="tabbar mobilebar"')}`; }
 function sheetHTML() {
-  const span = `${YEARS[0]}–${YEARS[YEARS.length - 1]}`;
-  const find = t => CATALOG.find(x => x.t === t);
-  const ex = [["Bleeding Love", 2008], ["Love Story", 2008], ["In Love with a Girl", 2008]].map(([t, y]) => ({ s: find(t), y })).filter(e => e.s);
-  const exRow = ({ s }) => `<div class="ex">${coverEl(s, 40, 6)}<span class="ex-t"><b>${esc(s.t)}</b><small>${esc(s.main)} · ${chartRun(s)}</small></span><span class="ex-p" style="background:var(${tierVar(s.pts)})">+${s.pts}</span></div>`;
-  const tiers = TIERS.map(t => [t[1], t[2]]);
+  const snip = (st) => `<div class="sline"><div class="sbar"><div class="unl" style="width:${STAGES[st] / 12 * 100}%"></div>${STAGES.slice(0, -1).map(x => `<i style="left:${x / 12 * 100}%"></i>`).join("")}</div><div class="slabs">${STAGES.map((x, i) => `<span class="${i <= st ? "u" : ""}" style="left:${x / 12 * 100}%">${x}s</span>`).join("")}</div></div>`;
   return `<div class="scrim" data-act="closesheet"><div class="sheet how" role="dialog" aria-modal="true" aria-labelledby="howt">
   <div class="grab"></div>
-  <header class="how-hd"><span class="lab">How to play</span><h2 id="howt">Name the biggest songs of the late 2000s.</h2>
-    <p class="sub">Every answer has to be on a Billboard year-end Hot 100 from ${span.replace("–", " to ")}. Anything older or newer doesn’t count.</p></header>
-  <section class="card"><div class="card-hd"><span class="num">1</span><h3>Answer the prompt</h3><span class="lab">25 sec</span></div>
-    <div class="mock"><span class="mock-q">Name a love song from 2008.</span><span class="mock-in">In Love with a Gi<i></i></span></div>
-    <p class="sub">Type the title. Anything that doesn’t fit is ignored, so keep guessing until the clock runs out.</p></section>
-  <section class="card"><div class="card-hd"><span class="num">2</span><h3>Go deep for points</h3><span class="lab">7 prompts</span></div>
-    ${ex.map(exRow).join("")}
-    <div class="ladder">${tiers.map(([p, r]) => `<div><i style="height:${8 + p * .34}px;background:var(${tierVar(p)})"></i><b>${p}</b><small>${r}</small></div>`).join("")}</div>
-    <p class="sub">Songs are scored on how well-known they are today: how high and how long they charted, plus how much they still get played. A hint halves the points.</p></section>
-  <section class="card row"><span class="rec" style="--rs:96px;width:96px">${recordSVG([100, 85, 60, 30], { label: "" })}</span>
-    <div><div class="card-hd"><span class="num">3</span><h3>Fill your record</h3></div><p class="sub">Points fill it from the edge in. 700 fills it. Then hear the songs you missed.</p></div></section>
+  <header class="how-hd"><span class="lab">How to play</span><h2 id="howt">Name the song from one second.</h2>
+    <p class="sub">Seven songs a day, all from Billboard’s biggest songs of 2006 to 2010.</p></header>
+  <section class="card"><div class="card-hd"><span class="stepn">1</span><h3>Listen</h3></div>
+    <div class="mock"><div class="snip" style="padding:0"><span class="bigplay" style="width:44px;height:44px">${I.play}</span>${snip(0)}</div></div>
+    <p class="sub">Tap play to hear the first second. Then type the title.</p></section>
+  <section class="card"><div class="card-hd"><span class="stepn">2</span><h3>Guess or skip</h3></div>
+    <div class="mock">${snip(2)}<div class="tries" style="margin-top:4px"><div class="try wrong"><s>Umbrella</s></div><div class="try skip">Skipped</div><div class="try now">Your guess</div></div></div>
+    <p class="sub">A wrong guess or a skip plays more of the song. After 4 seconds you get the year it charted, then the artist.</p></section>
+  <section class="card"><div class="card-hd"><span class="stepn">3</span><h3>Name it fast</h3></div>
+    <div class="ladder">${STAGES.map((x, i) => `<div><i style="height:${8 + STAGE_PTS[i] * .34}px;background:var(${tierVar(STAGE_PTS[i] + 5)})"></i><b>${STAGE_PTS[i]}</b><small>${x}s</small></div>`).join("")}</div>
+    <p class="sub">The sooner you name it, the more it’s worth. The songs get less famous as the day goes on.</p></section>
+  <section class="card row"><span class="rec" style="--rs:96px;width:96px">${recordSVG([100, 80, 60, 40], { label: "" })}</span>
+    <div><div class="card-hd"><span class="stepn">4</span><h3>Fill your record</h3></div><p class="sub">Seven songs, up to 100 points each. Save the ones you’d forgotten.</p></div></section>
   <button class="btn" data-act="closesheet" style="justify-content:center">Start today’s record</button></div></div>`;
 }
 
@@ -643,15 +660,15 @@ document.addEventListener("click", e => {
   if (t.dataset.act === "closesheet" && (t.tagName === "BUTTON" || e.target === t)) { state.sheet = false; store.set("seenHow", true); render(); return; }
   if (t.dataset.nav) { stopAudio(); clearInterval(tick); if (t.dataset.nav === "how") { state.sheet = true; render(); return; } state.view = t.dataset.nav; if (t.dataset.nav === "records") state.tab = "records"; render(); window.scrollTo(0, 0); return; }
   if (t.dataset.tab) { state.tab = t.dataset.tab; render(); return; }
-  if (t.dataset.pick != null) { const s = state.sugg[+t.dataset.pick]; if (s) submit(s); return; }
   if (t.dataset.play) { const s = BYKEY.get(t.dataset.play); if (s) playSong(s); return; }
   if (t.dataset.save) { toggleSave(t.dataset.save); return; }
   switch (t.dataset.act) {
     case "start": startDay(today); break;
     case "day": { const n = +t.dataset.day, r = runs()[n]; if (r?.done) { state.day = n; state.run = r; state.view = "results"; render(); window.scrollTo(0, 0); } else startDay(n); break; }
-    case "hint": useHint(); break;
+    case "snip": playSnippet(); break;
+    case "skip": advance("skip"); break;
     case "next": next(); break;
-    case "quit": clearInterval(tick); stopAudio(); state.view = "home"; render(); toast("Progress saved"); break;
+    case "quit": stopAudio(); state.view = "home"; render(); toast("Progress saved"); break;
     case "share": share(); break;
     case "saveall": { const s = savedSongs(); state.run.answers.filter(Boolean).forEach(a => { if (!s.includes(a.key)) s.push(a.key); }); store.set("saved", s); toast("Saved your seven"); render(); break; }
   }
@@ -663,20 +680,21 @@ document.addEventListener("input", e => {
 });
 document.addEventListener("submit", e => {
   e.preventDefault(); if (e.target.id !== "f" || state.typed.trim().length < 1) return;
-  const { prompts } = promptsFor(state.day), p = prompts[state.idx], used = state.run.answers.filter(Boolean).map(a => a.key);
-  const cands = matchTitle(state.typed);
-  if (!cands.length) { state.err = `Couldn’t find “${state.typed.trim()}” on any year-end chart. Check the spelling.`; state.typed = ""; render(); const i = $("#answer"); if (i) { i.value = ""; i.focus(); } return; }
-  submit(cands.find(c => p.answers.includes(c) && !used.includes(c.key)) || cands[0]);
+  const s = curTrack(), typed = state.typed.trim(), cands = matchTitle(typed);
+  state.typed = ""; const clear = () => { const i = $("#answer"); if (i) { i.value = ""; i.focus(); } };
+  if (cands.some(c => c === s || c.nt === s.nt)) { finishTrack(true); return; }
+  if (!cands.length) { state.err = `Couldn’t find “${typed}” on the charts. Check the spelling.`; render(); clear(); return; }
+  advance("wrong", cands[0].t); clear();
 });
 async function share() {
-  const r = state.run, n = state.day, { theme } = promptsFor(n);
-  const text = `needle No. ${n} · ${theme.name}\n${r.answers.map(a => SHARE_GLYPH(a ? a.pts : 0)).join(" ")}  ${r.score}/700\n${verdictLine(r.score)}\nhfong13.github.io/needle`;
+  const r = state.run, n = state.day, { theme } = tracksFor(n);
+  const text = `needle No. ${n} · ${theme.name}\n${r.answers.map(a => a?.ok ? ["●", "◕", "◑", "◔", "○"][a.stage] : "×").join(" ")}  ${r.score}/700\n${verdictLine(r.score)}\nhfong13.github.io/needle`;
   try { await navigator.clipboard.writeText(text); toast("Copied. Paste it in your group chat."); } catch { toast(text.split("\n")[1]); }
 }
 
 /* ---------- boot ---------- */
 Promise.all([fetch("data/songs.json").then(r => r.json()), fetch("data/tags.json").then(r => r.json())]).then(([j, tg]) => {
-  TAGMAP = tg; buildCatalog(j); window.__needle = { promptsFor, catalog: () => CATALOG, themes: () => THEMES.map(t => t.name) }; state.view = "home"; state.sheet = !store.get("seenHow", false); render(); connectDb();
+  TAGMAP = tg; buildCatalog(j); window.__needle = { promptsFor, tracksFor, catalog: () => CATALOG, themes: () => THEMES.map(t => t.name) }; state.view = "home"; state.sheet = !store.get("seenHow", false); render(); connectDb();
 }).catch(() => { $("#app").innerHTML = `<div class="loading"><div class="wordmark">needle</div><p class="sub">The charts didn’t load. Refresh to try again.</p></div>`; });
 })();
 </script>
